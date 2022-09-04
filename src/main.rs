@@ -5,6 +5,7 @@ extern crate image;
 
 use crate::geometry::vertex::Vertex;
 
+use egui_winit::winit::event::{MouseScrollDelta, MouseButton, ElementState};
 use glium::{glutin, Display, Frame, Program, Surface, texture::{SrgbTexture2d}};
 
 pub mod geometry;
@@ -45,7 +46,7 @@ fn draw_things(dis: &Display, mut target: Frame, pro: &Program, texture: &SrgbTe
 
     //let texture = glium::texture::SrgbTexture2d::new(dis, img).unwrap();
 
-    let uniforms = uniform! {tex: texture, aspect: vertex_info.aspect};
+    let uniforms = uniform! {tex: texture, aspect: vertex_info.aspect, zoom: vertex_info.zoom, offset: vertex_info.offset};
 
     // &glium::uniforms::EmptyUniforms
     target
@@ -68,6 +69,14 @@ fn main() {
         aspect: 0.0,
         zoom: 0.0,
         offset: [0.0,0.0],
+        init_offset: [0.0,0.0],
+    };
+
+    let mut input_info = info::InputInfo{
+        scroll_delta: 0.0,
+        middle_mouse: false,
+        drag_start: (0.0,0.0),
+        mouse_pos: (0.0,0.0),
     };
     
 
@@ -85,10 +94,12 @@ fn main() {
     out vec2 v_tex_coords;
 
     uniform float aspect;
+    uniform float zoom;
+    uniform vec2 offset;
 
     void main() {
         v_tex_coords = tex_coords;
-        gl_Position = vec4(position.x, position.y*aspect, 0.0, 1.0);
+        gl_Position = vec4((position.x+offset.x)*zoom, (position.y*aspect+offset.y)*zoom, 0.0, 1.0);
     }
     "#;
 
@@ -111,7 +122,10 @@ fn main() {
 
     let image = texture_manager::get_texture(&display);
 
+
+    let mut scroll = false;
     event_loop.run(move |event, _, control_flow| {
+
         let mut redraw = || {
             let mut quit = false;
 
@@ -135,8 +149,13 @@ fn main() {
             {
 
                 //get shader info
-                
-                vertex_info = info::collect_vertex_shader_info(vertex_info, &display);
+                if !scroll {
+                    input_info.scroll_delta = 0.0;
+                }
+                vertex_info = info::collect_vertex_shader_info(vertex_info, &input_info, &display);
+                if scroll {
+                    scroll = false
+                }
 
                 use glium::Surface as _;
                 let mut target = display.draw();
@@ -155,6 +174,7 @@ fn main() {
             }
         };
 
+        
         match event {
             // Platform-dependent event handlers to workaround a winit bug
             // See: https://github.com/rust-windowing/winit/issues/987
@@ -162,18 +182,69 @@ fn main() {
             glutin::event::Event::RedrawEventsCleared if cfg!(windows) => redraw(),
             glutin::event::Event::RedrawRequested(_) if !cfg!(windows) => redraw(),
 
-            glutin::event::Event::WindowEvent { event, .. } => {
-                use glutin::event::WindowEvent;
-                if matches!(event, WindowEvent::CloseRequested | WindowEvent::Destroyed) {
+            glutin::event::Event::WindowEvent { event, .. } => match event {
+                glutin::event::WindowEvent::CloseRequested => {
+                    println!("Received termination signal.");
                     *control_flow = glutin::event_loop::ControlFlow::Exit;
+                    return;
+                },
+                /* The code to get the mouse position (And print it to the console) */
+                glutin::event::WindowEvent::CursorMoved { position, .. } => {
+                    //println!("Mouse position: {:?}x{:?}", position.x as u16, position.y as u16);
+                    input_info.mouse_pos.0 = position.x as f32;
+                    input_info.mouse_pos.1 = position.y as f32;
+                }
+                // _ => return,
+
+                glutin::event::WindowEvent::MouseWheel { delta, .. } => {
+                    if let MouseScrollDelta::LineDelta(_, y) = delta {
+                        scroll = true;
+                        input_info.scroll_delta = y;
+                    }
                 }
 
-                let event_response = egui_glium.on_event(&event);
+                glutin::event::WindowEvent::MouseInput { button, state, ..} => {
+                    if let MouseButton::Middle = button {
+                        if let ElementState::Pressed = state {
+                            if input_info.middle_mouse == false {
+                                input_info.drag_start = input_info.mouse_pos;
+                            }
 
-                if event_response {
-                    display.gl_window().window().request_redraw();
+                            vertex_info.init_offset[0] = vertex_info.offset[0];
+                            vertex_info.init_offset[1] = vertex_info.offset[1];
+
+                            input_info.middle_mouse = true;
+                        }
+                        else {
+                            input_info.middle_mouse = false;
+                            // vertex_info.offset[0] = vertex_info.init_offset[0];
+                            // vertex_info.offset[1] = vertex_info.init_offset[1];
+                        }
+                    } 
                 }
-            }
+
+                _ => {
+                input_info.scroll_delta = 0.0;
+                return;
+                },
+
+            },
+
+            // glutin::event::Event::WindowEvent { event, .. } => {
+            //     use glutin::event::WindowEvent;
+            //     if matches!(event, WindowEvent::CloseRequested | WindowEvent::Destroyed) {
+            //         *control_flow = glutin::event_loop::ControlFlow::Exit;
+            //     }
+
+            //     let event_response = egui_glium.on_event(&event);
+
+            //     if event_response {
+            //         display.gl_window().window().request_redraw();
+            //     }
+
+            // }
+
+
             glutin::event::Event::NewEvents(glutin::event::StartCause::ResumeTimeReached {
                 ..
             }) => {
@@ -181,6 +252,13 @@ fn main() {
             }
             _ => (),
         }
+
+        
+
+        
+
+
+
     });
 }
 
