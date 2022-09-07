@@ -5,15 +5,21 @@ extern crate image;
 
 use crate::geometry::vertex::Vertex;
 
-use egui_winit::winit::event::{MouseScrollDelta, MouseButton, ElementState};
-use glium::{glutin, Display, Frame, Program, Surface, texture::{SrgbTexture2d}};
+use egui_winit::winit::event::{ElementState, MouseButton, MouseScrollDelta};
+use glium::{glutin, texture::SrgbTexture2d, Display, Frame, Program, Surface};
 
 pub mod geometry;
 pub mod gui;
-pub mod texture_manager;
 pub mod info;
+pub mod texture_manager;
 
-fn draw_things(dis: &Display, mut target: Frame, pro: &Program, texture: &SrgbTexture2d, vertex_info: &info::VertexShaderInfo) -> Frame {
+fn draw_things(
+    dis: &Display,
+    mut target: Frame,
+    pro: &Program,
+    texture: &SrgbTexture2d,
+    vertex_info: &info::VertexShaderInfo,
+) -> Frame {
     let point1 = Vertex {
         position: [-1.0, 1.0],
         tex_coords: [0.0, 1.0],
@@ -62,32 +68,27 @@ fn draw_things(dis: &Display, mut target: Frame, pro: &Program, texture: &SrgbTe
     return target;
 }
 
-
 fn main() {
-
-    let mut vertex_info = info::VertexShaderInfo{
+    let mut vertex_info = info::VertexShaderInfo {
         aspect: 0.0,
         zoom: 1.0,
-        offset: [0.0,0.0],
-        init_camera: [0.0,0.0],
+        offset: [0.0, 0.0],
+        init_camera: [0.0, 0.0],
         camera: [0.0, 0.0],
     };
 
-    let mut input_info = info::InputInfo{
+    let mut input_info = info::InputInfo {
         scroll_delta: 0.0,
         left_mouse: false,
         control: false,
-        drag_start: (0.0,0.0),
-        mouse_pos: (0.0,0.0),
+        drag_start: (0.0, 0.0),
+        mouse_pos: (0.0, 0.0),
     };
-    
 
     let event_loop = glutin::event_loop::EventLoopBuilder::with_user_event().build();
     let display = create_display(&event_loop);
 
     let mut egui_glium = egui_glium::EguiGlium::new(&display, &event_loop);
-
-    
 
     let vertex_shader_src = r#"
     #version 140
@@ -124,10 +125,8 @@ fn main() {
 
     let image = texture_manager::get_texture(&display);
 
-
     let mut scroll = false;
     event_loop.run(move |event, _, control_flow| {
-
         let mut redraw = || {
             let mut quit = false;
 
@@ -149,7 +148,6 @@ fn main() {
             };
 
             {
-
                 //get shader info
                 if !scroll {
                     input_info.scroll_delta = 0.0;
@@ -176,84 +174,68 @@ fn main() {
             }
         };
 
-        
-        
         match event {
-
-            // glutin::event::Event::WindowEvent { event, .. } => {
-            //     use glutin::event::WindowEvent;
-            //     if matches!(event, WindowEvent::CloseRequested | WindowEvent::Destroyed) {
-            //         *control_flow = glutin::event_loop::ControlFlow::Exit;
-            //     }
-    
-            //     let event_response = egui_glium.on_event(&event);
-    
-            //     if event_response {
-            //         display.gl_window().window().request_redraw();
-            //     }
-    
-            // }
-
-
             // Platform-dependent event handlers to workaround a winit bug
             // See: https://github.com/rust-windowing/winit/issues/987
             // See: https://github.com/rust-windowing/winit/issues/1619
             glutin::event::Event::RedrawEventsCleared if cfg!(windows) => redraw(),
             glutin::event::Event::RedrawRequested(_) if !cfg!(windows) => redraw(),
 
+            glutin::event::Event::WindowEvent { event, .. } => {
+                match event {
+                    glutin::event::WindowEvent::CloseRequested => {
+                        println!("Received termination signal.");
+                        *control_flow = glutin::event_loop::ControlFlow::Exit;
+                        return;
+                    }
+                    /* The code to get the mouse position (And print it to the console) */
+                    glutin::event::WindowEvent::CursorMoved { position, .. } => {
+                        //println!("Mouse position: {:?}x{:?}", position.x as u16, position.y as u16);
+                        input_info.mouse_pos.0 = position.x as f32;
+                        input_info.mouse_pos.1 = position.y as f32;
+                    }
+                    // _ => return,
+                    glutin::event::WindowEvent::MouseWheel { delta, .. } => {
+                        if let MouseScrollDelta::LineDelta(_, y) = delta {
+                            scroll = true;
+                            input_info.scroll_delta = y;
+                        }
+                    }
 
+                    glutin::event::WindowEvent::MouseInput { button, state, .. } => {
+                        if let MouseButton::Left = button {
+                            if let ElementState::Pressed = state {
+                                if input_info.left_mouse == false {
+                                    input_info.drag_start = input_info.mouse_pos;
+                                    vertex_info.init_camera[0] = vertex_info.camera[0];
+                                    vertex_info.init_camera[1] = vertex_info.camera[1];
+                                }
 
-            glutin::event::Event::WindowEvent { event, .. } => match event {
-                glutin::event::WindowEvent::CloseRequested => {
-                    println!("Received termination signal.");
-                    *control_flow = glutin::event_loop::ControlFlow::Exit;
-                    return;
-                },
-                /* The code to get the mouse position (And print it to the console) */
-                glutin::event::WindowEvent::CursorMoved { position, .. } => {
-                    //println!("Mouse position: {:?}x{:?}", position.x as u16, position.y as u16);
-                    input_info.mouse_pos.0 = position.x as f32;
-                    input_info.mouse_pos.1 = position.y as f32;
-                }
-                // _ => return,
+                                // vertex_info.init_offset[0] = vertex_info.offset[0];
+                                // vertex_info.init_offset[1] = vertex_info.offset[1];
 
-                glutin::event::WindowEvent::MouseWheel { delta, .. } => {
-                    if let MouseScrollDelta::LineDelta(_, y) = delta {
-                        scroll = true;
-                        input_info.scroll_delta = y;
+                                input_info.left_mouse = true;
+                            } else {
+                                input_info.left_mouse = false;
+                            }
+                        }
+                    }
+
+                    _ => {
+                        input_info.scroll_delta = 0.0;
+                        return;
                     }
                 }
 
-                glutin::event::WindowEvent::MouseInput { button, state, ..} => {
-                    if let MouseButton::Left = button {
-                        if let ElementState::Pressed = state {
-                            if input_info.left_mouse == false {
-                                input_info.drag_start = input_info.mouse_pos;
-                                vertex_info.init_camera[0] = vertex_info.camera[0];
-                                vertex_info.init_camera[1] = vertex_info.camera[1];
-                            }
-
-                            // vertex_info.init_offset[0] = vertex_info.offset[0];
-                            // vertex_info.init_offset[1] = vertex_info.offset[1];
-
-                            input_info.left_mouse = true;
-                        }
-                        else {
-                            input_info.left_mouse = false;
-                        }
-                    } 
+                // important piece of egui code that allows egui to update
+                let event_response = egui_glium.on_event(&event);
+    
+                if event_response {
+                    display.gl_window().window().request_redraw();
                 }
-
-                _ => {
-                input_info.scroll_delta = 0.0;
-                return;
-                },
-
-            },
+            }
 
             
-
-
             glutin::event::Event::NewEvents(glutin::event::StartCause::ResumeTimeReached {
                 ..
             }) => {
@@ -261,13 +243,6 @@ fn main() {
             }
             _ => (),
         }
-
-        
-
-        
-
-
-
     });
 }
 
