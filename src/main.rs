@@ -67,14 +67,16 @@ fn main() {
 
     let mut vertex_info = info::VertexShaderInfo{
         aspect: 0.0,
-        zoom: 0.0,
+        zoom: 1.0,
         offset: [0.0,0.0],
-        init_offset: [0.0,0.0],
+        init_camera: [0.0,0.0],
+        camera: [0.0, 0.0],
     };
 
     let mut input_info = info::InputInfo{
         scroll_delta: 0.0,
-        middle_mouse: false,
+        left_mouse: false,
+        control: false,
         drag_start: (0.0,0.0),
         mouse_pos: (0.0,0.0),
     };
@@ -175,12 +177,31 @@ fn main() {
         };
 
         
+        
         match event {
+
+            // glutin::event::Event::WindowEvent { event, .. } => {
+            //     use glutin::event::WindowEvent;
+            //     if matches!(event, WindowEvent::CloseRequested | WindowEvent::Destroyed) {
+            //         *control_flow = glutin::event_loop::ControlFlow::Exit;
+            //     }
+    
+            //     let event_response = egui_glium.on_event(&event);
+    
+            //     if event_response {
+            //         display.gl_window().window().request_redraw();
+            //     }
+    
+            // }
+
+
             // Platform-dependent event handlers to workaround a winit bug
             // See: https://github.com/rust-windowing/winit/issues/987
             // See: https://github.com/rust-windowing/winit/issues/1619
             glutin::event::Event::RedrawEventsCleared if cfg!(windows) => redraw(),
             glutin::event::Event::RedrawRequested(_) if !cfg!(windows) => redraw(),
+
+
 
             glutin::event::Event::WindowEvent { event, .. } => match event {
                 glutin::event::WindowEvent::CloseRequested => {
@@ -204,21 +225,21 @@ fn main() {
                 }
 
                 glutin::event::WindowEvent::MouseInput { button, state, ..} => {
-                    if let MouseButton::Middle = button {
+                    if let MouseButton::Left = button {
                         if let ElementState::Pressed = state {
-                            if input_info.middle_mouse == false {
+                            if input_info.left_mouse == false {
                                 input_info.drag_start = input_info.mouse_pos;
+                                vertex_info.init_camera[0] = vertex_info.camera[0];
+                                vertex_info.init_camera[1] = vertex_info.camera[1];
                             }
 
-                            vertex_info.init_offset[0] = vertex_info.offset[0];
-                            vertex_info.init_offset[1] = vertex_info.offset[1];
+                            // vertex_info.init_offset[0] = vertex_info.offset[0];
+                            // vertex_info.init_offset[1] = vertex_info.offset[1];
 
-                            input_info.middle_mouse = true;
+                            input_info.left_mouse = true;
                         }
                         else {
-                            input_info.middle_mouse = false;
-                            // vertex_info.offset[0] = vertex_info.init_offset[0];
-                            // vertex_info.offset[1] = vertex_info.init_offset[1];
+                            input_info.left_mouse = false;
                         }
                     } 
                 }
@@ -230,19 +251,7 @@ fn main() {
 
             },
 
-            // glutin::event::Event::WindowEvent { event, .. } => {
-            //     use glutin::event::WindowEvent;
-            //     if matches!(event, WindowEvent::CloseRequested | WindowEvent::Destroyed) {
-            //         *control_flow = glutin::event_loop::ControlFlow::Exit;
-            //     }
-
-            //     let event_response = egui_glium.on_event(&event);
-
-            //     if event_response {
-            //         display.gl_window().window().request_redraw();
-            //     }
-
-            // }
+            
 
 
             glutin::event::Event::NewEvents(glutin::event::StartCause::ResumeTimeReached {
