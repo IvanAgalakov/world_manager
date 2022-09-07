@@ -152,7 +152,8 @@ fn main() {
                 if !scroll {
                     input_info.scroll_delta = 0.0;
                 }
-                vertex_info = info::collect_vertex_shader_info(vertex_info, &input_info, &display);
+                
+                vertex_info = info::collect_vertex_shader_info(vertex_info, &input_info, &display, &egui_glium);
                 if scroll {
                     scroll = false
                 }
@@ -235,7 +236,7 @@ fn main() {
                 }
             }
 
-            
+
             glutin::event::Event::NewEvents(glutin::event::StartCause::ResumeTimeReached {
                 ..
             }) => {

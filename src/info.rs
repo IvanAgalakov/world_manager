@@ -1,3 +1,4 @@
+use egui_glium::EguiGlium;
 use glium::Display;
 #[derive(Copy, Clone)]
 pub struct VertexShaderInfo {
@@ -17,7 +18,7 @@ pub struct InputInfo {
     pub(crate) mouse_pos: (f32, f32),
 }
 
-pub fn collect_vertex_shader_info(mut vert: VertexShaderInfo, input: &InputInfo, display: &Display) -> VertexShaderInfo {
+pub fn collect_vertex_shader_info(mut vert: VertexShaderInfo, input: &InputInfo, display: &Display, egui_glium: &EguiGlium) -> VertexShaderInfo {
     let dimensions = display.get_framebuffer_dimensions();
     let dimensions = (dimensions.0 as f32, dimensions.1 as f32);
     if dimensions.1 > 0.0 {
@@ -28,7 +29,7 @@ pub fn collect_vertex_shader_info(mut vert: VertexShaderInfo, input: &InputInfo,
 
     vert.zoom += input.scroll_delta * 0.05;
 
-    if input.left_mouse {
+    if input.left_mouse && !egui_glium.egui_ctx.wants_pointer_input() {
         vert.camera[0] = vert.init_camera[0]+(input.mouse_pos.0-input.drag_start.0)/vert.zoom;
         vert.camera[1] = vert.init_camera[1]+(input.mouse_pos.1-input.drag_start.1)/vert.zoom;
     }
