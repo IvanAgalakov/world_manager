@@ -12,61 +12,8 @@ pub mod geometry;
 pub mod gui;
 pub mod info;
 pub mod texture_manager;
+pub mod data_displayer;
 
-fn draw_things(
-    dis: &Display,
-    mut target: Frame,
-    pro: &Program,
-    texture: &SrgbTexture2d,
-    vertex_info: &info::VertexShaderInfo,
-) -> Frame {
-    let point1 = Vertex {
-        position: [-1.0, 1.0],
-        tex_coords: [0.0, 1.0],
-    };
-    let point2 = Vertex {
-        position: [-1.0, -1.0],
-        tex_coords: [0.0, 0.0],
-    };
-    let point3 = Vertex {
-        position: [1.0, -1.0],
-        tex_coords: [1.0, 0.0],
-    };
-    let point4 = Vertex {
-        position: [1.0, -1.0],
-        tex_coords: [1.0, 0.0],
-    };
-    let point5 = Vertex {
-        position: [1.0, 1.0],
-        tex_coords: [1.0, 1.0],
-    };
-    let point6 = Vertex {
-        position: [-1.0, 1.0],
-        tex_coords: [0.0, 1.0],
-    };
-
-    let shape = vec![point1, point2, point3, point4, point5, point6];
-
-    let vertex_buffer = glium::VertexBuffer::new(dis, &shape).unwrap();
-    let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
-
-    //let texture = glium::texture::SrgbTexture2d::new(dis, img).unwrap();
-
-    let uniforms = uniform! {tex: texture, aspect: vertex_info.aspect, zoom: vertex_info.zoom, offset: vertex_info.offset};
-
-    // &glium::uniforms::EmptyUniforms
-    target
-        .draw(
-            &vertex_buffer,
-            &indices,
-            &pro,
-            &uniforms,
-            &Default::default(),
-        )
-        .unwrap();
-
-    return target;
-}
 
 fn main() {
     let mut vertex_info = info::VertexShaderInfo {
@@ -83,6 +30,8 @@ fn main() {
         control: false,
         drag_start: (0.0, 0.0),
         mouse_pos: (0.0, 0.0),
+
+        zoom_modifier: 0.01,
     };
 
     let event_loop = glutin::event_loop::EventLoopBuilder::with_user_event().build();
@@ -131,7 +80,9 @@ fn main() {
             let mut quit = false;
 
             let repaint_after = egui_glium.run(&display, |egui_ctx| {
-                quit = gui::run(egui_ctx);
+                let run_output = gui::run(egui_ctx, input_info);
+                quit = run_output.0;
+                input_info = run_output.1;
             });
 
             *control_flow = if quit {
@@ -165,7 +116,8 @@ fn main() {
                 target.clear_color(color[0], color[1], color[2], color[3]);
 
                 // draw things behind egui here
-                let mut target = draw_things(&display, target, &program, &image, &vertex_info);
+                //let mut target = draw_things(&display, target, &program, &image, &vertex_info);
+                let mut target = data_displayer::draw_things(&display, target, &program, &image, &vertex_info);
 
                 egui_glium.paint(&display, &mut target);
 

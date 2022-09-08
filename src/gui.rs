@@ -1,6 +1,9 @@
 use egui::Context;
 
-pub fn run(egui_ctx: &Context) -> bool{
+use crate::info::InputInfo;
+
+
+pub fn run(egui_ctx: &Context, mut input: InputInfo) -> (bool, InputInfo) {
     let mut test = egui::Window::new("test window");
     test = test.resizable(false);
 
@@ -11,7 +14,8 @@ pub fn run(egui_ctx: &Context) -> bool{
         if ui.button("Quit").clicked() {
             quit = true;
         }
+        ui.add(egui::Slider::new(&mut input.zoom_modifier, 0.01..=0.05).text("Zoom Speed"));
     });
 
-    quit
+    (quit, input)
 }

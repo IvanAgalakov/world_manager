@@ -16,6 +16,8 @@ pub struct InputInfo {
     pub(crate) control: bool,
     pub(crate) drag_start: (f32, f32),
     pub(crate) mouse_pos: (f32, f32),
+
+    pub(crate) zoom_modifier: f32,
 }
 
 pub fn collect_vertex_shader_info(mut vert: VertexShaderInfo, input: &InputInfo, display: &Display, egui_glium: &EguiGlium) -> VertexShaderInfo {
@@ -27,7 +29,10 @@ pub fn collect_vertex_shader_info(mut vert: VertexShaderInfo, input: &InputInfo,
 
     //println!("the mouse pos is are {:?}", input.mouse_pos);
 
-    vert.zoom += input.scroll_delta * 0.05;
+    vert.zoom += input.scroll_delta * input.zoom_modifier;
+    if vert.zoom < 0.01 {
+        vert.zoom = 0.01;
+    }
 
     if input.left_mouse && !egui_glium.egui_ctx.wants_pointer_input() {
         vert.camera[0] = vert.init_camera[0]+(input.mouse_pos.0-input.drag_start.0)/vert.zoom;
