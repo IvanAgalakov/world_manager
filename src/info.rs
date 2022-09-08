@@ -34,7 +34,7 @@ pub fn collect_vertex_shader_info(mut vert: VertexShaderInfo, input: &InputInfo,
         vert.zoom = 0.01;
     }
 
-    if input.left_mouse && !egui_glium.egui_ctx.wants_pointer_input() {
+    if input.left_mouse && !egui_glium.egui_ctx.wants_pointer_input() && input.control {
         vert.camera[0] = vert.init_camera[0]+(input.mouse_pos.0-input.drag_start.0)/vert.zoom;
         vert.camera[1] = vert.init_camera[1]+(input.mouse_pos.1-input.drag_start.1)/vert.zoom;
     }

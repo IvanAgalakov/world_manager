@@ -5,7 +5,7 @@ extern crate image;
 
 use crate::geometry::vertex::Vertex;
 
-use egui_winit::winit::event::{ElementState, MouseButton, MouseScrollDelta};
+use egui_winit::winit::event::{ElementState, MouseButton, MouseScrollDelta, KeyboardInput, ScanCode, ModifiersState};
 use glium::{glutin, texture::SrgbTexture2d, Display, Frame, Program, Surface};
 
 pub mod geometry;
@@ -171,6 +171,14 @@ fn main() {
                             } else {
                                 input_info.left_mouse = false;
                             }
+                        }
+                    }
+
+                    glutin::event::WindowEvent::ModifiersChanged(state) => {
+                        if state.ctrl() {
+                            input_info.control = true;
+                        } else {
+                            input_info.control = false;
                         }
                     }
 
