@@ -81,7 +81,7 @@ fn main() {
 
     let image = texture_manager::get_texture(&display, &egui_glium.egui_ctx);
 
-    let mut world_info = WorldInfo {world_texture: None};
+    let mut world_info = WorldInfo::new(None);
 
     let mut scroll = false;
     event_loop.run(move |event, _, control_flow| {

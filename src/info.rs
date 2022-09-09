@@ -31,12 +31,14 @@ pub struct GUIInfo {
 }
 
 pub struct WorldInfo {
+    pub(crate) created: bool,
     pub(crate) world_texture: Option<TextureData>,
+    pub(crate) texture_list: Vec<TextureData>,
 }
 
 impl WorldInfo {
-    pub fn new(tex_data: TextureData) -> Self {
-        WorldInfo{world_texture: Some(tex_data)}
+    pub fn new(tex_data: Option<TextureData>) -> Self {
+        WorldInfo{created: false, world_texture: tex_data, texture_list: Vec::new()}
     }
 }
 
