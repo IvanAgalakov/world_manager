@@ -14,7 +14,6 @@ pub mod info;
 pub mod texture_manager;
 pub mod data_displayer;
 
-
 fn main() {
     let mut vertex_info = info::VertexShaderInfo {
         aspect: 0.0,
@@ -31,7 +30,11 @@ fn main() {
         drag_start: (0.0, 0.0),
         mouse_pos: (0.0, 0.0),
 
-        zoom_modifier: 0.01,
+        zoom_modifier: 0.05,
+    };
+
+    let mut gui_info = info::GUIInfo {
+        new_menu_opened: false,
     };
 
     let event_loop = glutin::event_loop::EventLoopBuilder::with_user_event().build();
@@ -72,7 +75,7 @@ fn main() {
         glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None)
             .unwrap();
 
-    let image = texture_manager::get_texture(&display);
+    let image = texture_manager::get_texture(&display, &egui_glium.egui_ctx);
 
     let mut scroll = false;
     event_loop.run(move |event, _, control_flow| {
@@ -80,9 +83,10 @@ fn main() {
             let mut quit = false;
 
             let repaint_after = egui_glium.run(&display, |egui_ctx| {
-                let run_output = gui::run(egui_ctx, input_info);
-                quit = run_output.0;
-                input_info = run_output.1;
+                let run_results = gui::run(egui_ctx, &input_info, gui_info);
+                quit = run_results.0;
+                gui_info = run_results.1;
+                //egui_ctx.load_texture(name, image, filter);
             });
 
             *control_flow = if quit {
@@ -117,7 +121,7 @@ fn main() {
 
                 // draw things behind egui here
                 //let mut target = draw_things(&display, target, &program, &image, &vertex_info);
-                let mut target = data_displayer::draw_things(&display, target, &program, &image, &vertex_info);
+                let mut target = data_displayer::draw_things(&display, target, &program, &image.vertex_texture, &vertex_info);
 
                 egui_glium.paint(&display, &mut target);
 

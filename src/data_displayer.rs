@@ -1,3 +1,4 @@
+use egui::epaint::TextureManager;
 use glium::{Display, Frame, Program, texture::SrgbTexture2d, Surface};
 
 use crate::{info, geometry::vertex::Vertex};
@@ -33,6 +34,8 @@ pub fn draw_things(
         position: [-1.0, 1.0],
         tex_coords: [0.0, 1.0],
     };
+
+    
 
     let shape = vec![point1, point2, point3, point4, point5, point6];
 

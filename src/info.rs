@@ -20,6 +20,11 @@ pub struct InputInfo {
     pub(crate) zoom_modifier: f32,
 }
 
+#[derive(Copy, Clone)]
+pub struct GUIInfo {
+    pub(crate) new_menu_opened: bool,
+}
+
 pub fn collect_vertex_shader_info(mut vert: VertexShaderInfo, input: &InputInfo, display: &Display, egui_glium: &EguiGlium) -> VertexShaderInfo {
     let dimensions = display.get_framebuffer_dimensions();
     let dimensions = (dimensions.0 as f32, dimensions.1 as f32);
