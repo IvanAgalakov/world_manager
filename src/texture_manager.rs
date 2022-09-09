@@ -8,6 +8,10 @@ pub struct TextureData {
     pub(crate) gui_texture: TextureHandle,
 }
 
+impl TextureData {
+    
+}
+
 
 pub fn get_texture(dis: &Display, egui_ctx: &Context) -> TextureData {
     let image = image::open(&Path::new("C:/Users/Ivan/Documents/test.png")).unwrap();

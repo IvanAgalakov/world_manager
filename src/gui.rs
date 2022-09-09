@@ -1,10 +1,12 @@
-use egui::Context;
+use egui::{Context, TextureHandle};
+use glium::Display;
 
-use crate::info::{InputInfo, GUIInfo};
+use crate::{info::{InputInfo, GUIInfo, WorldInfo}, texture_manager};
 
-pub fn run(egui_ctx: &Context, input: &InputInfo, mut gui_info: GUIInfo) -> (bool, GUIInfo) {
+pub fn run(egui_ctx: &Context, dis: &Display, input: &InputInfo, mut gui_info: GUIInfo, world_info: &mut WorldInfo) -> (bool, GUIInfo) {
     let mut main_panel = egui::SidePanel::left("actions");
     main_panel = main_panel.resizable(false);
+
 
     let mut quit = false;
 
@@ -15,6 +17,7 @@ pub fn run(egui_ctx: &Context, input: &InputInfo, mut gui_info: GUIInfo) -> (boo
 
         if ui.button("New").clicked() {
             gui_info.new_menu_opened = true;
+            world_info.world_texture = Some(texture_manager::get_texture(dis, egui_ctx));
         }
 
         if ui.button("Quit").clicked() {
@@ -26,6 +29,8 @@ pub fn run(egui_ctx: &Context, input: &InputInfo, mut gui_info: GUIInfo) -> (boo
     if gui_info.new_menu_opened {
         egui::Window::show(new_world_menu, egui_ctx, |ui| {
             ui.heading("New World Menu");
+            let tex_han : &TextureHandle = &world_info.world_texture.as_ref().unwrap().gui_texture;
+            ui.image(tex_han, tex_han.size_vec2());
             //ui.image(texture_id, size)
         });
     }

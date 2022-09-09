@@ -7,6 +7,7 @@ use crate::geometry::vertex::Vertex;
 
 use egui_winit::winit::event::{ElementState, MouseButton, MouseScrollDelta, KeyboardInput, ScanCode, ModifiersState};
 use glium::{glutin, texture::SrgbTexture2d, Display, Frame, Program, Surface};
+use info::WorldInfo;
 
 pub mod geometry;
 pub mod gui;
@@ -36,6 +37,9 @@ fn main() {
     let mut gui_info = info::GUIInfo {
         new_menu_opened: false,
     };
+
+    let test = false;
+    
 
     let event_loop = glutin::event_loop::EventLoopBuilder::with_user_event().build();
     let display = create_display(&event_loop);
@@ -77,13 +81,15 @@ fn main() {
 
     let image = texture_manager::get_texture(&display, &egui_glium.egui_ctx);
 
+    let mut world_info = WorldInfo {world_texture: None};
+
     let mut scroll = false;
     event_loop.run(move |event, _, control_flow| {
         let mut redraw = || {
             let mut quit = false;
 
             let repaint_after = egui_glium.run(&display, |egui_ctx| {
-                let run_results = gui::run(egui_ctx, &input_info, gui_info);
+                let run_results = gui::run(egui_ctx, &display, &input_info, gui_info, &mut world_info);
                 quit = run_results.0;
                 gui_info = run_results.1;
                 //egui_ctx.load_texture(name, image, filter);
@@ -126,6 +132,7 @@ fn main() {
                 egui_glium.paint(&display, &mut target);
 
                 // draw things on top of egui here
+                
 
                 target.finish().unwrap();
             }
@@ -209,6 +216,8 @@ fn main() {
             _ => (),
         }
     });
+
+    
 }
 
 fn create_display(event_loop: &glutin::event_loop::EventLoop<()>) -> glium::Display {

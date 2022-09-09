@@ -1,5 +1,10 @@
+use std::result;
+
+use egui::TextureHandle;
 use egui_glium::EguiGlium;
-use glium::Display;
+use glium::{Display, texture::SrgbTexture2d};
+
+use crate::texture_manager::TextureData;
 #[derive(Copy, Clone)]
 pub struct VertexShaderInfo {
     pub(crate) aspect: f32,
@@ -23,6 +28,16 @@ pub struct InputInfo {
 #[derive(Copy, Clone)]
 pub struct GUIInfo {
     pub(crate) new_menu_opened: bool,
+}
+
+pub struct WorldInfo {
+    pub(crate) world_texture: Option<TextureData>,
+}
+
+impl WorldInfo {
+    pub fn new(tex_data: TextureData) -> Self {
+        WorldInfo{world_texture: Some(tex_data)}
+    }
 }
 
 pub fn collect_vertex_shader_info(mut vert: VertexShaderInfo, input: &InputInfo, display: &Display, egui_glium: &EguiGlium) -> VertexShaderInfo {
