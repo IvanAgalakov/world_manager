@@ -1,4 +1,6 @@
-use egui::{Context, TextureHandle, Vec2};
+use std::{path::PathBuf, ops::Deref, alloc::System};
+
+use egui::{Context, TextureHandle, Vec2, TextBuffer, epaint::tessellator::path};
 use glium::Display;
 
 use crate::{
@@ -39,11 +41,17 @@ pub fn run(
     if gui_info.new_menu_opened {
         egui::Window::show(new_world_menu, egui_ctx, |ui| {
             ui.heading("New World Menu");
-            let tex_han: &TextureHandle = &world_info.world_texture.as_ref().unwrap().gui_texture;
-            let ratio = tex_han.aspect_ratio();
-            let s = Vec2::new(100.0*ratio, 100.0);
-            ui.image(tex_han, s);
-            world_info.created = true;
+            if ui.button("open base image").clicked() {
+                let document_dir = dirs_next::document_dir().unwrap();
+                let document_dir = document_dir.into_os_string().into_string().unwrap();
+                let path_to_texture = tinyfiledialogs::open_file_dialog("open the base image for your world", &document_dir, Some((&["*.png"; 1], ".png")));
+                println!("continued");
+            }
+            // let tex_han: &TextureHandle = &world_info.world_texture.as_ref().unwrap().gui_texture;
+            // let ratio = tex_han.aspect_ratio();
+            // let s = Vec2::new(100.0*ratio, 100.0);
+            // ui.image(tex_han, s);
+            // world_info.created = true;
             //ui.image(texture_id, size)
         });
     }
