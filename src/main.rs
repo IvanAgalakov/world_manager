@@ -46,6 +46,8 @@ fn main() {
 
     let mut egui_glium = egui_glium::EguiGlium::new(&display, &event_loop);
 
+    
+
     let vertex_shader_src = r#"
     #version 140
     in vec2 position;
@@ -121,6 +123,9 @@ fn main() {
 
                 use glium::Surface as _;
                 let mut target = display.draw();
+
+                
+                
 
                 let color = egui::Rgba::from_rgb(0.1, 0.3, 0.2);
                 target.clear_color(color[0], color[1], color[2], color[3]);

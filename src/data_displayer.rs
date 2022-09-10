@@ -35,13 +35,19 @@ pub fn draw_things(
         let uniforms = uniform! {tex: texture, aspect: vertex_info.aspect, zoom: vertex_info.zoom, offset: vertex_info.offset};
 
         // &glium::uniforms::EmptyUniforms
+
+        let params = glium::DrawParameters {
+            blend: glium::Blend::alpha_blending(),
+            .. Default::default()
+        };
+
         target
             .draw(
                 &vertex_buffer,
                 &indices,
                 &pro,
                 &uniforms,
-                &Default::default(),
+                &params,
             )
             .unwrap();
     }
