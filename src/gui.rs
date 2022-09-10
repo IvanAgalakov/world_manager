@@ -15,6 +15,7 @@ pub fn run(
     mut gui_info: GUIInfo,
     world_info: &mut WorldInfo,
 ) -> (bool, GUIInfo) {
+
     let mut main_panel = egui::SidePanel::left("actions");
     main_panel = main_panel.resizable(false);
 
@@ -27,9 +28,9 @@ pub fn run(
 
         if ui.button("New").clicked() {
             gui_info.new_menu_opened = true;
-            if (!world_info.created) {
-                world_info.world_texture = Some(texture_manager::get_texture(dis, egui_ctx));
-            }
+            // if !world_info.created {
+            //     //world_info.world_texture = Some(texture_manager::get_texture(dis, egui_ctx));
+            // }
         }
 
         if ui.button("Quit").clicked() {
@@ -45,14 +46,19 @@ pub fn run(
                 let document_dir = dirs_next::document_dir().unwrap();
                 let document_dir = document_dir.into_os_string().into_string().unwrap();
                 let path_to_texture = tinyfiledialogs::open_file_dialog("open the base image for your world", &document_dir, Some((&["*.png"; 1], ".png")));
-                println!("continued");
+                if path_to_texture.is_some() {
+                    let path_to_texture = path_to_texture.unwrap();
+                    let world_tex = texture_manager::get_texture(dis, egui_ctx, &path_to_texture);
+                    world_info.world_texture = Some(world_tex);
+                }
             }
-            // let tex_han: &TextureHandle = &world_info.world_texture.as_ref().unwrap().gui_texture;
-            // let ratio = tex_han.aspect_ratio();
-            // let s = Vec2::new(100.0*ratio, 100.0);
-            // ui.image(tex_han, s);
-            // world_info.created = true;
-            //ui.image(texture_id, size)
+
+            if world_info.world_texture.is_some() {
+                let tex_han: &TextureHandle = &world_info.world_texture.as_ref().unwrap().gui_texture;
+                let ratio = tex_han.aspect_ratio();
+                let s = Vec2::new(100.0*ratio, 100.0);
+                ui.image(tex_han, s);
+            }
         });
     }
 

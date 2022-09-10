@@ -1,4 +1,4 @@
-use std::result;
+use std::{result, ops::Deref};
 
 use egui::TextureHandle;
 use egui_glium::EguiGlium;

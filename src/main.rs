@@ -79,7 +79,7 @@ fn main() {
         glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None)
             .unwrap();
 
-    let image = texture_manager::get_texture(&display, &egui_glium.egui_ctx);
+    //let image = texture_manager::get_texture(&display, &egui_glium.egui_ctx);
 
     let mut world_info = WorldInfo::new(None);
 
@@ -127,7 +127,9 @@ fn main() {
 
                 // draw things behind egui here
                 //let mut target = draw_things(&display, target, &program, &image, &vertex_info);
-                let mut target = data_displayer::draw_things(&display, target, &program, &image.vertex_texture, &vertex_info);
+
+                let draw_pass = data_displayer::draw_things(&display, target, &program, &vertex_info, &world_info);
+                let mut target = draw_pass;
 
                 egui_glium.paint(&display, &mut target);
 
