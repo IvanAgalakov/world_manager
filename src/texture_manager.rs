@@ -2,7 +2,7 @@ use std::path::Path;
 
 use egui::{Context, ColorImage, TextureHandle};
 use glium::{Display, texture::SrgbTexture2d};
-use image::DynamicImage;
+use image::{DynamicImage, GenericImageView};
 
 
 pub struct TextureData {
@@ -14,9 +14,13 @@ impl TextureData {
     
 }
 
-
-pub fn get_texture(dis: &Display, egui_ctx: &Context, path: &String) -> TextureData {
+pub fn get_dynamic_image( path: &String) -> DynamicImage {
     let image = image::open(&Path::new(path)).unwrap();
+    image
+}
+
+
+pub fn get_texture_data(dis: &Display, egui_ctx: &Context, image: &DynamicImage) -> TextureData {
     let size = [image.width() as _, image.height() as _];
     let image = image.to_rgba8();
     let pixels = image.as_flat_samples();
