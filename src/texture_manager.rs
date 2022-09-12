@@ -38,7 +38,7 @@ pub fn get_texture_data(dis: &Display, egui_ctx: &Context, image: &DynamicImage)
 
     //let eg_texture = ColorImage::from_rgba_unmultiplied(image_dimensions, rgba);
 
-    let handle = egui_ctx.load_texture("test", eg_texture, egui::TextureFilter::Linear);
+    let handle = egui_ctx.load_texture("test", eg_texture, egui::TextureFilter::Nearest);
     
    // return texture;
    TextureData { vertex_texture: texture, gui_texture: handle }
