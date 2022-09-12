@@ -1,4 +1,4 @@
-use std::{alloc::System, ops::Deref, path::PathBuf};
+use std::{alloc::System, collections::VecDeque, ops::Deref, path::PathBuf, time::Instant};
 
 use egui::{epaint::tessellator::path, Context, TextBuffer, TextureHandle, Vec2};
 use glium::Display;
@@ -55,14 +55,14 @@ pub fn run(
                     let path_to_texture = path_to_texture.unwrap();
                     let mut dyn_tex = texture_manager::get_dynamic_image(&path_to_texture);
 
-                    let mut rng = rand::thread_rng();
+                    
 
                     let mut start_x: i32 = -1;
                     let mut start_y: i32 = -1;
                     for x in 0..dyn_tex.width() {
                         for y in 0..dyn_tex.height() {
                             let pix = dyn_tex.get_pixel(x, y);
-                            if pix.0[3] != 0 {
+                            if pix.0[3] > 50 {
                                 dyn_tex.put_pixel(
                                     x,
                                     y,
@@ -77,10 +77,7 @@ pub fn run(
                     }
 
                     if start_x != -1 {
-                        // let mut done = false;
-                        // let mut x = start_x as u32;
-                        // let mut y = start_y as u32;
-                        // while !done {}
+
                         fill(
                             start_x as u32,
                             start_y as u32,
@@ -88,11 +85,26 @@ pub fn run(
                             Rgba {
                                 0: [250, 0, 0, 255],
                             },
-                            1,
                         );
-                        // dyn_tex.put_pixel(3, 3, Rgba {
-                        //             0: [250, 0, 0, 255],
-                        //         });
+
+                        let white = Rgba {
+                            0: [255,255,255,255],
+                        };
+
+                        let mut rng = rand::thread_rng();
+
+                        for x in 0..dyn_tex.width() {
+                            for y in 0..dyn_tex.height() {
+                                if dyn_tex.get_pixel(x, y).eq(&white) {
+                                    let r = rng.gen_range(1..255);
+                                    let g = rng.gen_range(1..255);
+                                    let b = rng.gen_range(1..255);
+                                    fill(x, y, &mut dyn_tex, Rgba {
+                                        0: [r, g, b, 255],
+                                    });
+                                }
+                            }
+                        }
                     }
 
                     let world_tex = texture_manager::get_texture_data(dis, egui_ctx, &dyn_tex);
@@ -113,44 +125,43 @@ pub fn run(
     (quit, gui_info)
 }
 
-pub fn fill(x: u32, y: u32, img: &mut DynamicImage, color: Rgba<u8>, num: u32) {
-    let mut pixels_to_go: Vec<[u32; 2]> = Vec::new();
-    pixels_to_go.push([x,y]);
+pub fn fill(x: u32, y: u32, img: &mut DynamicImage, color: Rgba<u8>) {
+    let new_color = color;
+    let initial_color = img.get_pixel(x, y);
 
-    let mut num = 0;
+    if new_color.eq(&initial_color) {
+        println!("returned");
+        return;
+    }
 
-    let mut pix_check: Vec<String> = Vec::new();
-    pix_check.push(format!("({},{})", x, y));
+    let height = img.height();
+    let width = img.width();
 
-    //println!("{} image width {} image height", img.width(), img.height());
-    while num < pixels_to_go.len() {
-        let x = pixels_to_go.get(num).unwrap()[0];
-        let y = pixels_to_go.get(num).unwrap()[1];
-        img.put_pixel(x, y, color);
-        //println!("painted {},{}", x, y);
-        for mx in -1..2 {
-            for my in -1..2 {
-                if !(mx == 0 && my == 0) {
-                    let int_x = (x as i32) + mx;
-                    let int_y = (y as i32) + my;
+    let mut cells: VecDeque<(u32, u32)> = VecDeque::new();
 
-                    if int_x >= 0
-                        && int_y >= 0
-                        && int_x < img.width() as i32
-                        && int_y < img.height() as i32
-                    {
-                        if img.get_pixel(int_x as u32, int_y as u32).0[3] != 0 {
-                            if !pix_check.contains(&format!("({},{})", int_x, int_y)) {
-                                pixels_to_go.push([int_x as u32, int_y as u32]);
-                                pix_check.push(format!("({},{})", int_x, int_y));
-                            }
-                        }
-                    }
+    cells.push_back((x, y));
+
+    while let Some((x, y)) = cells.pop_front() {
+        let cell = &mut img.get_pixel(x as u32, y as u32);
+
+        if (*cell).eq(&new_color) {
+            //println!("done");
+            continue;
+        }
+
+        if (*cell).eq(&initial_color) {
+            //println!("{:?}", new_color);
+            img.put_pixel(x as u32, y as u32, new_color);
+
+            let offsets: Vec<(i32, i32)> = vec![(-1, 0), (1, 0), (0, -1), (0, 1)];
+            for (delta_x, delta_y) in offsets {
+                let new_x = (x as i32).wrapping_add(delta_x) as u32;
+                let new_y = (y as i32).wrapping_add(delta_y) as u32;
+
+                if new_y < height && new_x < width {
+                    cells.push_back((new_x, new_y));
                 }
             }
         }
-        num += 1;
-        
     }
-    println!("{}", num);
 }

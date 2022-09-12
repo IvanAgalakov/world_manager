@@ -1,0 +1,45 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'world_manager'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=world_manager",
+                    "--package=world_manager"
+                ],
+                "filter": {
+                    "name": "world_manager",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'world_manager'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=world_manager",
+                    "--package=world_manager"
+                ],
+                "filter": {
+                    "name": "world_manager",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
