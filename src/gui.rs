@@ -48,7 +48,8 @@ pub fn run(
                 let path_to_texture = tinyfiledialogs::open_file_dialog("open the base image for your world", &document_dir, Some((&["*.png"; 1], ".png")));
                 if path_to_texture.is_some() {
                     let path_to_texture = path_to_texture.unwrap();
-                    let world_tex = texture_manager::get_texture(dis, egui_ctx, &path_to_texture);
+                    let dyn_tex = texture_manager::get_dynamic_image(&path_to_texture);
+                    let world_tex = texture_manager::get_texture_data(dis, egui_ctx, &dyn_tex);
                     world_info.world_texture = Some(world_tex);
                 }
             }
