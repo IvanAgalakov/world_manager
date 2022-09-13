@@ -2,7 +2,7 @@ use std::path::Path;
 
 use egui::{Context, ColorImage, TextureHandle};
 use glium::{Display, texture::SrgbTexture2d};
-use image::{DynamicImage, GenericImageView};
+use image::{DynamicImage, GenericImageView, ColorType, buffer::ConvertBuffer};
 
 
 pub struct TextureData {
@@ -15,7 +15,9 @@ impl TextureData {
 }
 
 pub fn get_dynamic_image( path: &String) -> DynamicImage {
-    let image = image::open(&Path::new(path)).unwrap();
+    let mut image: DynamicImage = image::open(&Path::new(path)).unwrap();
+    image = DynamicImage::ImageRgba8(image.into_rgba8());
+    println!("{}",image.color().has_color());
     image
 }
 

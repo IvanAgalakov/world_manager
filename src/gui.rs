@@ -7,7 +7,7 @@ use rand::Rng;
 
 use crate::{
     info::{GUIInfo, InputInfo, WorldInfo},
-    texture_manager,
+    texture_manager, geometry,
 };
 
 pub fn run(
@@ -56,56 +56,8 @@ pub fn run(
                     let mut dyn_tex = texture_manager::get_dynamic_image(&path_to_texture);
 
                     
-
-                    let mut start_x: i32 = -1;
-                    let mut start_y: i32 = -1;
-                    for x in 0..dyn_tex.width() {
-                        for y in 0..dyn_tex.height() {
-                            let pix = dyn_tex.get_pixel(x, y);
-                            if pix.0[3] > 50 {
-                                dyn_tex.put_pixel(
-                                    x,
-                                    y,
-                                    Rgba {
-                                        0: [255, 255, 255, 255],
-                                    },
-                                );
-                                start_x = x as i32;
-                                start_y = y as i32;
-                            }
-                        }
-                    }
-
-                    if start_x != -1 {
-
-                        fill(
-                            start_x as u32,
-                            start_y as u32,
-                            &mut dyn_tex,
-                            Rgba {
-                                0: [250, 0, 0, 255],
-                            },
-                        );
-
-                        let white = Rgba {
-                            0: [255,255,255,255],
-                        };
-
-                        let mut rng = rand::thread_rng();
-
-                        for x in 0..dyn_tex.width() {
-                            for y in 0..dyn_tex.height() {
-                                if dyn_tex.get_pixel(x, y).eq(&white) {
-                                    let r = rng.gen_range(1..255);
-                                    let g = rng.gen_range(1..255);
-                                    let b = rng.gen_range(1..255);
-                                    fill(x, y, &mut dyn_tex, Rgba {
-                                        0: [r, g, b, 255],
-                                    });
-                                }
-                            }
-                        }
-                    }
+                    let triangles = geometry::generate_mesh_from_image(&mut dyn_tex);
+                    
 
                     let world_tex = texture_manager::get_texture_data(dis, egui_ctx, &dyn_tex);
                     world_info.world_texture = Some(world_tex);
@@ -125,43 +77,3 @@ pub fn run(
     (quit, gui_info)
 }
 
-pub fn fill(x: u32, y: u32, img: &mut DynamicImage, color: Rgba<u8>) {
-    let new_color = color;
-    let initial_color = img.get_pixel(x, y);
-
-    if new_color.eq(&initial_color) {
-        println!("returned");
-        return;
-    }
-
-    let height = img.height();
-    let width = img.width();
-
-    let mut cells: VecDeque<(u32, u32)> = VecDeque::new();
-
-    cells.push_back((x, y));
-
-    while let Some((x, y)) = cells.pop_front() {
-        let cell = &mut img.get_pixel(x as u32, y as u32);
-
-        if (*cell).eq(&new_color) {
-            //println!("done");
-            continue;
-        }
-
-        if (*cell).eq(&initial_color) {
-            //println!("{:?}", new_color);
-            img.put_pixel(x as u32, y as u32, new_color);
-
-            let offsets: Vec<(i32, i32)> = vec![(-1, 0), (1, 0), (0, -1), (0, 1)];
-            for (delta_x, delta_y) in offsets {
-                let new_x = (x as i32).wrapping_add(delta_x) as u32;
-                let new_y = (y as i32).wrapping_add(delta_y) as u32;
-
-                if new_y < height && new_x < width {
-                    cells.push_back((new_x, new_y));
-                }
-            }
-        }
-    }
-}
