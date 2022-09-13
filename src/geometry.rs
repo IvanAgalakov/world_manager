@@ -1,9 +1,9 @@
 use std::collections::VecDeque;
 
-use delaunator::{Point, triangulate};
 use egui::{Pos2, Vec2};
-use image::{DynamicImage, GenericImageView, GenericImage, Rgba};
+use image::{DynamicImage, GenericImage, GenericImageView, Rgba};
 use rand::Rng;
+use spade::{DelaunayTriangulation, Point2, Triangulation};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Vertex {
@@ -117,12 +117,12 @@ impl Shape {
 
 struct PixelIsland {
     pixel_coordinates: Vec<(u32, u32)>,
-    top_right: (u32,u32),
-    bottom_left: (u32,u32),
+    top_right: (u32, u32),
+    bottom_left: (u32, u32),
     my_color: Rgba<u8>,
 }
 
-pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<usize>{
+pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Vertex> {
     let mut start_x: i32 = -1;
     let mut start_y: i32 = -1;
     for x in 0..dyn_tex.width() {
@@ -142,24 +142,22 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<usize>{
         }
     }
 
-
     let mut islands: Vec<PixelIsland> = Vec::new();
 
     if start_x != -1 {
-
         let mut used_colors = Vec::new();
 
         let red = Rgba {
             0: [255, 0, 0, 255],
         };
 
-        let info = fill(
-            start_x as u32,
-            start_y as u32,
-            dyn_tex,
-            red,
-        );
-        islands.push(PixelIsland { pixel_coordinates: info.0, top_right: info.1, bottom_left: info.2, my_color: red});
+        let info = fill(start_x as u32, start_y as u32, dyn_tex, red);
+        islands.push(PixelIsland {
+            pixel_coordinates: info.0,
+            top_right: info.1,
+            bottom_left: info.2,
+            my_color: red,
+        });
         used_colors.push(red);
 
         let white = Rgba {
@@ -183,7 +181,12 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<usize>{
                     }
                     used_colors.push(color);
                     let info = fill(x, y, dyn_tex, color);
-                    islands.push(PixelIsland { pixel_coordinates: info.0, top_right: info.1, bottom_left: info.2, my_color: color});
+                    islands.push(PixelIsland {
+                        pixel_coordinates: info.0,
+                        top_right: info.1,
+                        bottom_left: info.2,
+                        my_color: color,
+                    });
                 }
             }
         }
@@ -195,37 +198,49 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<usize>{
     //let mut all_arranged = Vec::new();
     println!("{}", islands.len());
     for mut island in islands {
-        let mut start = (0,0);
+        let mut start = (0, 0);
         for x in island.bottom_left.0..island.top_right.0 {
             for y in island.bottom_left.1..island.top_right.1 {
                 if dyn_tex.get_pixel(x, y).eq(&island.my_color) {
-                    start = (x,y);
+                    start = (x, y);
                 }
             }
         }
         let mut done = false;
-        let mut arranged_pixels: Vec<(u32,u32)> = Vec::new();
+        let mut arranged_pixels: Vec<(u32, u32)> = Vec::new();
         let mut x = start.0;
         let mut y = start.1;
         while !done {
             arranged_pixels.push(start);
-            let offsets: Vec<(i32, i32)> = vec![(0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1,-1), (-1, 0), (-1,1)];
+            let offsets: Vec<(i32, i32)> = vec![
+                (0, 1),
+                (1, 1),
+                (1, 0),
+                (1, -1),
+                (0, -1),
+                (-1, -1),
+                (-1, 0),
+                (-1, 1),
+            ];
             let mut found_path = false;
             for (delta_x, delta_y) in offsets {
                 let new_x = x as i32 + delta_x;
                 let new_y = y as i32 + delta_y;
-                if new_x < 0 || new_x >= width as i32{
+                if new_x < 0 || new_x >= width as i32 {
                     continue;
                 }
-                if new_y < 0 || new_y >= height as i32{
+                if new_y < 0 || new_y >= height as i32 {
                     continue;
                 }
                 let new_x = new_x as u32;
                 let new_y = new_y as u32;
-                if dyn_tex.get_pixel(new_x, new_y).0[3] > 0 && !arranged_pixels.contains(&(new_x, new_y)) && island.pixel_coordinates.contains(&(new_x, new_y)) {
+                if dyn_tex.get_pixel(new_x, new_y).0[3] > 0
+                    && !arranged_pixels.contains(&(new_x, new_y))
+                    && island.pixel_coordinates.contains(&(new_x, new_y))
+                {
                     x = new_x;
                     y = new_y;
-                    arranged_pixels.push((x,y));
+                    arranged_pixels.push((x, y));
                     found_path = true;
                     break;
                 }
@@ -234,29 +249,44 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<usize>{
                 done = true;
             }
         }
-        
-        let mut points = Vec::new();
+
+        //let mut points = Vec::new();
+        let mut triang: DelaunayTriangulation<Point2<f64>> = DelaunayTriangulation::new();
         for pixel in &arranged_pixels {
-            points.push(Point {x: (pixel.0 as f64)/(width as f64), y: (pixel.1 as f64)/(height as f64)});
+            triang.insert(Point2 { x: (pixel.0 as f64) / (width as f64), y: (pixel.1 as f64) / (height as f64),});
         }
-        let mut result = triangulate(&points);
-        triangles.append(&mut result.triangles);
+        let mut points = Vec::new();
+        for face in triang.inner_faces() {
+            for vert in face.vertices() {
+                let x = vert.position().x as f32;
+                let y = 1.0 - vert.position().y as f32;
+                points.push(Vertex {
+                    position: [x, y],
+                    tex_coords: [x, y],
+                });
+            }
+        }
+
+        triangles.append(&mut points);
 
         island.pixel_coordinates = arranged_pixels;
-
-
     }
 
     triangles
 }
 
-pub fn fill(x: u32, y: u32, img: &mut DynamicImage, color: Rgba<u8>) -> (Vec<(u32,u32)>,(u32,u32),(u32,u32)) {
+pub fn fill(
+    x: u32,
+    y: u32,
+    img: &mut DynamicImage,
+    color: Rgba<u8>,
+) -> (Vec<(u32, u32)>, (u32, u32), (u32, u32)) {
     let new_color = color;
     let initial_color = img.get_pixel(x, y);
 
     if new_color.eq(&initial_color) {
         println!("returned");
-        return (Vec::new(),(0,0),(0,0));
+        return (Vec::new(), (0, 0), (0, 0));
     }
 
     let height = img.height();
@@ -267,9 +297,9 @@ pub fn fill(x: u32, y: u32, img: &mut DynamicImage, color: Rgba<u8>) -> (Vec<(u3
     let mut pixels = Vec::new();
 
     cells.push_back((x, y));
-    pixels.push((x,y));
-    let mut top_right = (x,y);
-    let mut bottom_left = (x,y);
+    pixels.push((x, y));
+    let mut top_right = (x, y);
+    let mut bottom_left = (x, y);
     while let Some((x, y)) = cells.pop_front() {
         let cell = &mut img.get_pixel(x as u32, y as u32);
 
@@ -313,4 +343,3 @@ pub fn fill(x: u32, y: u32, img: &mut DynamicImage, color: Rgba<u8>) -> (Vec<(u3
 
     (pixels, top_right, bottom_left)
 }
-
