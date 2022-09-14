@@ -56,9 +56,9 @@ pub fn run(
                     let mut dyn_tex = texture_manager::get_dynamic_image(&path_to_texture);
 
                     
-                    let triangles = geometry::generate_mesh_from_image(&mut dyn_tex);
-                    world_info.triangles = triangles;
-                    println!("{:?}", &world_info.triangles);
+                    let lines = geometry::generate_mesh_from_image(&mut dyn_tex);
+                    world_info.lines = lines;
+                    //println!("{:?}", &world_info.lines);
 
                     let world_tex = texture_manager::get_texture_data(dis, egui_ctx, &dyn_tex);
                     world_info.world_texture = Some(world_tex);

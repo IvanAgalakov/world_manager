@@ -25,8 +25,8 @@ pub fn draw_things(
     if !world_info.world_texture.is_none() {
         let shape = Shape::new_rectangle(world_info.world_texture.as_ref().unwrap().gui_texture.aspect_ratio());
         
-        //let shape = shape.vertices;
-        let shape = &world_info.triangles;
+        let shape = shape.vertices;
+        //let shape = &world_info.lines;
 
         let vertex_buffer = glium::VertexBuffer::new(dis, &shape).unwrap();
         let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);

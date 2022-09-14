@@ -17,7 +17,6 @@ impl TextureData {
 pub fn get_dynamic_image( path: &String) -> DynamicImage {
     let mut image: DynamicImage = image::open(&Path::new(path)).unwrap();
     image = DynamicImage::ImageRgba8(image.into_rgba8());
-    println!("{}",image.color().has_color());
     image
 }
 

@@ -4,7 +4,7 @@ use egui::TextureHandle;
 use egui_glium::EguiGlium;
 use glium::{Display, texture::SrgbTexture2d};
 
-use crate::{texture_manager::TextureData, geometry::Vertex};
+use crate::{texture_manager::TextureData, geometry::{Vertex, Line}};
 #[derive(Copy, Clone)]
 pub struct VertexShaderInfo {
     pub(crate) aspect: f32,
@@ -34,12 +34,12 @@ pub struct WorldInfo {
     pub(crate) created: bool,
     pub(crate) world_texture: Option<TextureData>,
     pub(crate) texture_list: Vec<TextureData>,
-    pub(crate) triangles: Vec<Vertex>,
+    pub(crate) lines: Vec<Line>,
 }
 
 impl WorldInfo {
     pub fn new(tex_data: Option<TextureData>) -> Self {
-        WorldInfo{created: false, world_texture: tex_data, texture_list: Vec::new(), triangles: Vec::new()}
+        WorldInfo{created: false, world_texture: tex_data, texture_list: Vec::new(), lines: Vec::new()}
     }
 }
 

@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use egui::{Pos2, Vec2};
 use image::{DynamicImage, GenericImage, GenericImageView, Rgba};
 use rand::Rng;
-use spade::{DelaunayTriangulation, Point2, Triangulation};
+
 
 #[derive(Copy, Clone, Debug)]
 pub struct Vertex {
@@ -26,7 +26,7 @@ impl Vertex {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Line {
     pub(crate) start: Vertex,
     pub(crate) end: Vertex,
@@ -122,7 +122,7 @@ struct PixelIsland {
     my_color: Rgba<u8>,
 }
 
-pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Vertex> {
+pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
     let mut start_x: i32 = -1;
     let mut start_y: i32 = -1;
     for x in 0..dyn_tex.width() {
@@ -194,9 +194,9 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Vertex> {
 
     let width = dyn_tex.width();
     let height = dyn_tex.height();
-    let mut triangles = Vec::new();
+    let mut lines = Vec::new();
     //let mut all_arranged = Vec::new();
-    println!("{}", islands.len());
+    //println!("{}", islands.len());
     for mut island in islands {
         let mut start = (0, 0);
         for x in island.bottom_left.0..island.top_right.0 {
@@ -250,29 +250,52 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Vertex> {
             }
         }
 
-        //let mut points = Vec::new();
-        let mut triang: DelaunayTriangulation<Point2<f64>> = DelaunayTriangulation::new();
-        for pixel in &arranged_pixels {
-            triang.insert(Point2 { x: (pixel.0 as f64) / (width as f64), y: (pixel.1 as f64) / (height as f64),});
-        }
-        let mut points = Vec::new();
-        for face in triang.inner_faces() {
-            for vert in face.vertices() {
-                let x = vert.position().x as f32;
-                let y = 1.0 - vert.position().y as f32;
-                points.push(Vertex {
-                    position: [x, y],
-                    tex_coords: [x, y],
-                });
+        // //let mut points = Vec::new();
+        // let mut triang: DelaunayTriangulation<Point2<f64>> = DelaunayTriangulation::new();
+        // for pixel in &arranged_pixels {
+        //     triang.insert(Point2 { x: (pixel.0 as f64) / (width as f64), y: (pixel.1 as f64) / (height as f64),});
+        // }
+        // let mut points = Vec::new();
+        // for face in triang.inner_faces() {
+        //     for vert in face.vertices() {
+        //         let x = vert.position().x as f32;
+        //         let y = 1.0 - vert.position().y as f32;
+        //         points.push(Vertex {
+        //             position: [x, y],
+        //             tex_coords: [x, y],
+        //         });
+        //     }
+        // }
+
+        // triangles.append(&mut points);
+        if arranged_pixels.len() > 0 {
+            let first_coord = arranged_pixels.get(0);
+            for i in 0..arranged_pixels.len() {
+                let x = (arranged_pixels.get(i).unwrap().0/width) as f32;
+                let y = (arranged_pixels.get(i).unwrap().1/height) as f32;
+                if i+1 < arranged_pixels.len() {
+                    let x2 = (arranged_pixels.get(i+1).unwrap().0/width) as f32;
+                    let y2 = (arranged_pixels.get(i+1).unwrap().1/height) as f32;
+                    lines.push(Line {
+                        start: Vertex { position: [x,y], tex_coords: [x,y] },
+                        end: Vertex { position: [x2,y2], tex_coords: [x2,y2] }
+                    });
+                } else {
+                    let x2 = (arranged_pixels.get(0).unwrap().0/width) as f32;
+                    let y2 = (arranged_pixels.get(0).unwrap().1/height) as f32;
+                    lines.push(Line {
+                        start: Vertex { position: [x,y], tex_coords: [x,y] },
+                        end: Vertex { position: [x2,y2], tex_coords: [x2,y2] }
+                    });
+                }
             }
         }
 
-        triangles.append(&mut points);
 
         island.pixel_coordinates = arranged_pixels;
     }
 
-    triangles
+    lines
 }
 
 pub fn fill(
@@ -285,7 +308,7 @@ pub fn fill(
     let initial_color = img.get_pixel(x, y);
 
     if new_color.eq(&initial_color) {
-        println!("returned");
+        //println!("returned");
         return (Vec::new(), (0, 0), (0, 0));
     }
 
