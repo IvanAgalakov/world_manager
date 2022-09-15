@@ -14,6 +14,7 @@ pub mod gui;
 pub mod info;
 pub mod texture_manager;
 pub mod data_displayer;
+pub mod utils;
 
 fn main() {
     let mut vertex_info = info::VertexShaderInfo {

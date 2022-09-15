@@ -35,11 +35,12 @@ pub struct WorldInfo {
     pub(crate) world_texture: Option<TextureData>,
     pub(crate) texture_list: Vec<TextureData>,
     pub(crate) lines: Vec<Line>,
+    pub(crate) triangles: Vec<Vertex>
 }
 
 impl WorldInfo {
     pub fn new(tex_data: Option<TextureData>) -> Self {
-        WorldInfo{created: false, world_texture: tex_data, texture_list: Vec::new(), lines: Vec::new()}
+        WorldInfo{created: false, world_texture: tex_data, texture_list: Vec::new(), lines: Vec::new(), triangles: Vec::new()}
     }
 }
 

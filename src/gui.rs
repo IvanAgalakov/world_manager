@@ -7,7 +7,7 @@ use rand::Rng;
 
 use crate::{
     info::{GUIInfo, InputInfo, WorldInfo},
-    texture_manager, geometry,
+    texture_manager, geometry, utils,
 };
 
 pub fn run(
@@ -58,6 +58,10 @@ pub fn run(
                     
                     let lines = geometry::generate_mesh_from_image(&mut dyn_tex);
                     world_info.lines = lines;
+                    println!("length of: {}", world_info.lines.len());
+                    let tri = utils::vertices_from_lines(0.01, &world_info.lines);
+                    world_info.triangles = tri;
+                    //println!("vertice representation {:?}", world_info.triangles);
                     //println!("{:?}", &world_info.lines);
 
                     let world_tex = texture_manager::get_texture_data(dis, egui_ctx, &dyn_tex);

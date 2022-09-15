@@ -4,6 +4,8 @@ use egui::{Pos2, Vec2};
 use image::{DynamicImage, GenericImage, GenericImageView, Rgba};
 use rand::Rng;
 
+use crate::utils;
+
 
 #[derive(Copy, Clone, Debug)]
 pub struct Vertex {
@@ -23,6 +25,9 @@ impl Vertex {
             x: self.position[0],
             y: self.position[1],
         }
+    }
+    pub fn from_vector(vec : Vec2) -> Vertex {
+        Vertex {position: [vec.x, vec.y], tex_coords: [vec.x, vec.y]}
     }
 }
 
@@ -80,6 +85,22 @@ impl Line {
 
     pub fn get_length(&self) -> f32 {
         return self.start.as_pos().distance(self.end.as_pos());
+    }
+
+    pub fn get_rise(&self) -> f32 {
+        return self.end.as_vector().y - self.start.as_vector().y;
+    }
+
+    pub fn get_run(&self) -> f32 {
+        return self.end.as_vector().x - self.start.as_vector().x;
+    }
+    
+    pub fn get_start(&self) -> Vertex{
+        return self.start;
+    }
+
+    pub fn get_end(&self) -> Vertex {
+        return self.end;
     }
 }
 
@@ -192,12 +213,14 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
         }
     }
 
+
     let width = dyn_tex.width();
     let height = dyn_tex.height();
     let mut lines = Vec::new();
     //let mut all_arranged = Vec::new();
     //println!("{}", islands.len());
     for mut island in islands {
+        println!("pix coord: {:?}", island.pixel_coordinates.len());
         let mut start = (0, 0);
         for x in island.bottom_left.0..island.top_right.0 {
             for y in island.bottom_left.1..island.top_right.1 {
@@ -210,8 +233,8 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
         let mut arranged_pixels: Vec<(u32, u32)> = Vec::new();
         let mut x = start.0;
         let mut y = start.1;
+        arranged_pixels.push(start);
         while !done {
-            arranged_pixels.push(start);
             let offsets: Vec<(i32, i32)> = vec![
                 (0, 1),
                 (1, 1),
@@ -268,21 +291,21 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
         // }
 
         // triangles.append(&mut points);
+        //println!("arr length: {:?} height: {} width: {}",arranged_pixels, height, width);
         if arranged_pixels.len() > 0 {
-            let first_coord = arranged_pixels.get(0);
             for i in 0..arranged_pixels.len() {
-                let x = (arranged_pixels.get(i).unwrap().0/width) as f32;
-                let y = (arranged_pixels.get(i).unwrap().1/height) as f32;
+                let x = (arranged_pixels.get(i).unwrap().0 as f32/width as f32);
+                let y = (arranged_pixels.get(i).unwrap().1 as f32/height as f32);
                 if i+1 < arranged_pixels.len() {
-                    let x2 = (arranged_pixels.get(i+1).unwrap().0/width) as f32;
-                    let y2 = (arranged_pixels.get(i+1).unwrap().1/height) as f32;
+                    let x2 = (arranged_pixels.get(i+1).unwrap().0 as f32/width as f32);
+                    let y2 = (arranged_pixels.get(i+1).unwrap().1 as f32/height as f32);
                     lines.push(Line {
                         start: Vertex { position: [x,y], tex_coords: [x,y] },
                         end: Vertex { position: [x2,y2], tex_coords: [x2,y2] }
                     });
                 } else {
-                    let x2 = (arranged_pixels.get(0).unwrap().0/width) as f32;
-                    let y2 = (arranged_pixels.get(0).unwrap().1/height) as f32;
+                    let x2 = (arranged_pixels.get(0).unwrap().0 as f32/width as f32);
+                    let y2 = (arranged_pixels.get(0).unwrap().1 as f32/height as f32);
                     lines.push(Line {
                         start: Vertex { position: [x,y], tex_coords: [x,y] },
                         end: Vertex { position: [x2,y2], tex_coords: [x2,y2] }
@@ -290,6 +313,7 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
                 }
             }
         }
+        
 
 
         island.pixel_coordinates = arranged_pixels;
@@ -320,7 +344,7 @@ pub fn fill(
     let mut pixels = Vec::new();
 
     cells.push_back((x, y));
-    pixels.push((x, y));
+    //pixels.push((x, y));
     let mut top_right = (x, y);
     let mut bottom_left = (x, y);
     while let Some((x, y)) = cells.pop_front() {
@@ -354,11 +378,13 @@ pub fn fill(
 
                 if new_y < height && new_x < width {
                     cells.push_back((new_x, new_y));
-                    if img.get_pixel(new_x, new_y).0[3] == 0 {
+                    if img.get_pixel(new_x, new_y).0[3] == 0 && !pixels.contains(&(x, y)) {
                         pixels.push((x, y));
                     }
                 } else {
-                    pixels.push((x, y));
+                    if !pixels.contains(&(x, y)) {
+                        pixels.push((x, y));
+                    }
                 }
             }
         }
