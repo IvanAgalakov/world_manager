@@ -149,7 +149,7 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
     for x in 0..dyn_tex.width() {
         for y in 0..dyn_tex.height() {
             let pix = dyn_tex.get_pixel(x, y);
-            if pix.0[3] > 0 {
+            if pix.0[3] != 0 {
                 dyn_tex.put_pixel(
                     x,
                     y,
@@ -216,25 +216,13 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
 
     let width = dyn_tex.width();
     let height = dyn_tex.height();
+    //let aspect = (width as f32)/(height as f32);
     let mut lines = Vec::new();
     //let mut all_arranged = Vec::new();
     //println!("{}", islands.len());
-    for mut island in islands {
-        println!("pix coord: {:?}", island.pixel_coordinates.len());
-        let mut start = (0, 0);
-        for x in island.bottom_left.0..island.top_right.0 {
-            for y in island.bottom_left.1..island.top_right.1 {
-                if dyn_tex.get_pixel(x, y).eq(&island.my_color) {
-                    start = (x, y);
-                }
-            }
-        }
-        let mut done = false;
-        let mut arranged_pixels: Vec<(u32, u32)> = Vec::new();
-        let mut x = start.0;
-        let mut y = start.1;
-        arranged_pixels.push(start);
-        while !done {
+    for island in islands {
+        //println!("pix coord: {:?}", island.pixel_coordinates.len());
+        for pixel in island.pixel_coordinates {
             let offsets: Vec<(i32, i32)> = vec![
                 (0, 1),
                 (1, 1),
@@ -245,10 +233,9 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
                 (-1, 0),
                 (-1, 1),
             ];
-            let mut found_path = false;
             for (delta_x, delta_y) in offsets {
-                let new_x = x as i32 + delta_x;
-                let new_y = y as i32 + delta_y;
+                let new_x = pixel.0 as i32 + delta_x;
+                let new_y = pixel.1 as i32 + delta_y;
                 if new_x < 0 || new_x >= width as i32 {
                     continue;
                 }
@@ -258,21 +245,17 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
                 let new_x = new_x as u32;
                 let new_y = new_y as u32;
                 if dyn_tex.get_pixel(new_x, new_y).0[3] > 0
-                    && !arranged_pixels.contains(&(new_x, new_y))
-                    && island.pixel_coordinates.contains(&(new_x, new_y))
                 {
-                    x = new_x;
-                    y = new_y;
-                    arranged_pixels.push((x, y));
-                    found_path = true;
-                    break;
+                    let x = (pixel.0 as f32 / width as f32);
+                    let y = -(pixel.1 as f32 / height as f32);
+                    let new_x = (new_x as f32/width as f32);
+                    let new_y = -(new_y as f32/height as f32);
+                    lines.push(Line{start: Vertex { position: [x, y], tex_coords: [x, y] }, end: Vertex { position: [new_x, new_y], tex_coords: [new_x, new_y] }});
                 }
             }
-            if !found_path {
-                done = true;
-            }
         }
-
+    }
+        //println!("{:?}", arranged_pixels);
         // //let mut points = Vec::new();
         // let mut triang: DelaunayTriangulation<Point2<f64>> = DelaunayTriangulation::new();
         // for pixel in &arranged_pixels {
@@ -292,32 +275,33 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
 
         // triangles.append(&mut points);
         //println!("arr length: {:?} height: {} width: {}",arranged_pixels, height, width);
-        if arranged_pixels.len() > 0 {
-            for i in 0..arranged_pixels.len() {
-                let x = (arranged_pixels.get(i).unwrap().0 as f32/width as f32);
-                let y = (arranged_pixels.get(i).unwrap().1 as f32/height as f32);
-                if i+1 < arranged_pixels.len() {
-                    let x2 = (arranged_pixels.get(i+1).unwrap().0 as f32/width as f32);
-                    let y2 = (arranged_pixels.get(i+1).unwrap().1 as f32/height as f32);
-                    lines.push(Line {
-                        start: Vertex { position: [x,y], tex_coords: [x,y] },
-                        end: Vertex { position: [x2,y2], tex_coords: [x2,y2] }
-                    });
-                } else {
-                    let x2 = (arranged_pixels.get(0).unwrap().0 as f32/width as f32);
-                    let y2 = (arranged_pixels.get(0).unwrap().1 as f32/height as f32);
-                    lines.push(Line {
-                        start: Vertex { position: [x,y], tex_coords: [x,y] },
-                        end: Vertex { position: [x2,y2], tex_coords: [x2,y2] }
-                    });
-                }
-            }
-        }
+        // if arranged_pixels.len() > 0 {
+        //     for i in 0..arranged_pixels.len() {
+        //         let x = (arranged_pixels.get(i).unwrap().0 as f32/width as f32);
+        //         let y = -(arranged_pixels.get(i).unwrap().1 as f32/height as f32);
+        //         if i+1 < arranged_pixels.len() {
+        //             let x2 = (arranged_pixels.get(i+1).unwrap().0 as f32/width as f32);
+        //             let y2 = -(arranged_pixels.get(i+1).unwrap().1 as f32/height as f32);
+        //             lines.push(Line {
+        //                 start: Vertex { position: [x,y], tex_coords: [x,y] },
+        //                 end: Vertex { position: [x2,y2], tex_coords: [x2,y2] }
+        //             });
+        //         } else {
+        //             let x2 = (arranged_pixels.get(0).unwrap().0 as f32/width as f32);
+        //             let y2 = -(arranged_pixels.get(0).unwrap().1 as f32/height as f32);
+        //             lines.push(Line {
+        //                 start: Vertex { position: [x,y], tex_coords: [x,y] },
+        //                 end: Vertex { position: [x2,y2], tex_coords: [x2,y2] }
+        //             });
+        //         }
+        //     }
+        // }
+        
         
 
 
-        island.pixel_coordinates = arranged_pixels;
-    }
+    
+    
 
     lines
 }

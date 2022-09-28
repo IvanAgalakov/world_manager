@@ -36,3 +36,12 @@ pub fn vertices_from_lines(thickness: f32, lines: &Vec<Line>) -> Vec<Vertex>{
     }
     points
 }
+
+pub fn vertices_from_line_points(lines: &Vec<Line>) -> Vec<Vertex>{
+    let mut points = Vec::new();
+    for line in lines {
+        points.push(line.get_start());
+        points.push(line.get_end());
+    }
+    points
+}

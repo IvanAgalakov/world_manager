@@ -39,6 +39,8 @@ pub fn draw_things(
 
         let params = glium::DrawParameters {
             blend: glium::Blend::alpha_blending(),
+            //point_size: Some(1.0),
+            //polygon_mode: glium::PolygonMode::Fill,
             .. Default::default()
         };
 
