@@ -54,9 +54,9 @@ pub fn run(
                 if path_to_texture.is_some() {
                     let path_to_texture = path_to_texture.unwrap();
                     let mut dyn_tex = texture_manager::get_dynamic_image(&path_to_texture);
-
+                    let mut dyn_tex_copy = DynamicImage::clone(&dyn_tex);
                     
-                    let lines = geometry::generate_mesh_from_image(&mut dyn_tex);
+                    let lines = geometry::generate_mesh_from_image(&mut dyn_tex_copy);
                     world_info.lines = lines;
                     println!("length of: {}", world_info.lines.len());
                     let tri = utils::vertices_from_lines(0.01,&world_info.lines);

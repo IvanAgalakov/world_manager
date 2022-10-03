@@ -71,10 +71,15 @@ fn main() {
     out vec4 color;
 
     uniform sampler2D tex;
+    uniform bool useTexture;
 
     void main() {
         //color = vec4(1.0, 0.0, 0.0, 1.0);
-        color = texture(tex, v_tex_coords);
+        if (useTexture == true) {
+            color = texture(tex, v_tex_coords);
+        } else {
+            color = vec4(1.0, 0.0, 0.0, 1.0);
+        }
     }
     "#;
 

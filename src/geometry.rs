@@ -138,9 +138,6 @@ impl Shape {
 
 struct PixelIsland {
     pixel_coordinates: Vec<(u32, u32)>,
-    top_right: (u32, u32),
-    bottom_left: (u32, u32),
-    my_color: Rgba<u8>,
 }
 
 pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
@@ -175,9 +172,6 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
         let info = fill(start_x as u32, start_y as u32, dyn_tex, red);
         islands.push(PixelIsland {
             pixel_coordinates: info.0,
-            top_right: info.1,
-            bottom_left: info.2,
-            my_color: red,
         });
         used_colors.push(red);
 
@@ -204,9 +198,6 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
                     let info = fill(x, y, dyn_tex, color);
                     islands.push(PixelIsland {
                         pixel_coordinates: info.0,
-                        top_right: info.1,
-                        bottom_left: info.2,
-                        my_color: color,
                     });
                 }
             }
@@ -216,7 +207,8 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
 
     let width = dyn_tex.width();
     let height = dyn_tex.height();
-    //let aspect = (width as f32)/(height as f32);
+    let aspect = (width as f32)/(height as f32);
+    println!("{}", aspect);
     let mut lines = Vec::new();
     //let mut all_arranged = Vec::new();
     //println!("{}", islands.len());
@@ -246,11 +238,11 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
                 let new_y = new_y as u32;
                 if dyn_tex.get_pixel(new_x, new_y).0[3] > 0
                 {
-                    let x = (pixel.0 as f32 / width as f32);
-                    let y = -(pixel.1 as f32 / height as f32);
-                    let new_x = (new_x as f32/width as f32);
-                    let new_y = -(new_y as f32/height as f32);
-                    lines.push(Line{start: Vertex { position: [x, y], tex_coords: [x, y] }, end: Vertex { position: [new_x, new_y], tex_coords: [new_x, new_y] }});
+                    let x = (pixel.0 as f32 / width as f32)*2.0-1.0;
+                    let y = -(pixel.1 as f32 / height as f32)*2.0+1.0;
+                    let new_x = (new_x as f32/width as f32)*2.0-1.0;
+                    let new_y = -(new_y as f32/height as f32)*2.0+1.0;
+                    lines.push(Line{start: Vertex { position: [x*aspect, y], tex_coords: [x, y] }, end: Vertex { position: [new_x*aspect, new_y], tex_coords: [new_x, new_y] }});
                 }
             }
         }

@@ -10,9 +10,9 @@ pub fn normal_point_to_point(p: Vec2, rise: f32, run: f32, deviate: f32) -> Vec2
 }
 
 pub fn get_point_along_line(start: Vec2, rise: f32, run: f32, hypo: f32, deviate: f32) -> Vec2{
-    let runSq = run.powf(2.0);
-    let riseSq = rise.powf(2.0);
-    let formula = deviate.signum() * (deviate.powf(2.0) / (runSq + riseSq)).sqrt();
+    let run_sq = run.powf(2.0);
+    let rise_sq = rise.powf(2.0);
+    let formula = deviate.signum() * (deviate.powf(2.0) / (run_sq + rise_sq)).sqrt();
 
     return Vec2 {x: start.x + run * formula, y: start.y + rise * formula};
 }
