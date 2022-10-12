@@ -5,6 +5,7 @@ use image::{DynamicImage, GenericImage, GenericImageView, Rgba};
 use rand::Rng;
 
 use crate::utils;
+use crate::constants;
 
 
 #[derive(Copy, Clone, Debug)]
@@ -289,9 +290,44 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
         //     }
         // }
         
-        
+    // println!("{} lines before optimization", lines.len());
+    // //optimize lines
+    // for i in 0..lines.len() {
+    //     for mut x in 0..lines.len() {
+    //         if lines.get(i).is_some() && lines.get(x).is_some() {
+    //             let mut my_line = lines[i];
+    //             let mut check_line = lines[x];
+    //             if my_line.is_point_on_line(check_line.get_start().as_vector()) && my_line.is_point_on_line(check_line.get_end().as_vector()) {
+    //                 let dis_my = my_line.start.as_pos().distance(my_line.end.as_pos());
+    //                 let dis_their = my_line.start.as_pos().distance(check_line.end.as_pos());
+    //                 let dis_between = my_line.end.as_pos().distance(check_line.end.as_pos());
+    //                 if dis_between - (dis_my+dis_their) < constants::PRECISION {
+    //                     if dis_my < dis_their {
+    //                         my_line.end = check_line.end;
+    //                         lines.remove(x);
+    //                         if (x > 0) {
+    //                             x -= 1;
+    //                         }
+    //                     }
+    //                 }
 
-
+    //                 let dis_my = my_line.end.as_pos().distance(my_line.start.as_pos());
+    //                 let dis_their = my_line.end.as_pos().distance(check_line.start.as_pos());
+    //                 let dis_between = my_line.start.as_pos().distance(check_line.start.as_pos());
+    //                 if dis_between - (dis_my+dis_their) < constants::PRECISION {
+    //                     if dis_my < dis_their {
+    //                         my_line.start = check_line.start;
+    //                         lines.remove(x);
+    //                         if (x > 0) {
+    //                             x -= 1;
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+    // println!("{} lines after optimization", lines.len());
     
     
 

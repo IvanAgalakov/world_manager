@@ -75,6 +75,10 @@ pub fn run(
                 let ratio = tex_han.aspect_ratio();
                 let s = Vec2::new(100.0 * ratio, 100.0);
                 ui.image(tex_han, s);
+
+                let slider_ocean = egui::Slider::new(&mut world_info.ocean_line_num, 1..=20).text("Ocean Line #");
+                ui.add(slider_ocean);
+                
             }
         });
     }

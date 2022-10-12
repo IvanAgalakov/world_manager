@@ -15,6 +15,7 @@ pub mod info;
 pub mod texture_manager;
 pub mod data_displayer;
 pub mod utils;
+pub mod constants;
 
 fn main() {
     let mut vertex_info = info::VertexShaderInfo {
@@ -23,6 +24,7 @@ fn main() {
         offset: [0.0, 0.0],
         init_camera: [0.0, 0.0],
         camera: [0.0, 0.0],
+        mouse_pos: Vertex { position: [0.0,0.0], tex_coords: [0.0,0.0] },
     };
 
     let mut input_info = info::InputInfo {
@@ -38,8 +40,6 @@ fn main() {
     let mut gui_info = info::GUIInfo {
         new_menu_opened: false,
     };
-
-    let test = false;
     
 
     let event_loop = glutin::event_loop::EventLoopBuilder::with_user_event().build();

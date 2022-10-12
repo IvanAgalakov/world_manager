@@ -4,8 +4,8 @@ use egui::epaint::TextureManager;
 use glium::{texture::SrgbTexture2d, Display, Frame, Program, Surface};
 
 use crate::{
-    geometry::{Shape, Vertex},
-    info::{self, WorldInfo},
+    geometry::{Shape, Vertex, Line},
+    info::{self, WorldInfo, InputInfo},
     utils,
 };
 
@@ -51,8 +51,19 @@ pub fn draw_things(
             .draw(&vertex_buffer, &indices, &pro, &uniforms, &params)
             .unwrap();
     }
-    if !world_info.triangles.is_empty() {
-        target = draw_triangles(dis, target, pro, vertex_info, &world_info.triangles);
+    if !world_info.lines.is_empty() {
+        let fill = [vertex_info.mouse_pos.position[0] + 10.0, vertex_info.mouse_pos.position[1]];
+        let end = Vertex{position: fill, tex_coords: fill};
+        let horiz_line = Line{start: vertex_info.mouse_pos, end: end};
+        let mut lines = Vec::new();
+
+        for l in &world_info.lines {
+            if l.get_intersection(horiz_line).is_some() {
+                lines.push(l.clone());
+            }
+        }
+        let triangles = utils::vertices_from_lines(0.1, &lines);
+        target = draw_triangles(dis, target, pro, vertex_info, &triangles);
     }
 
     return target;

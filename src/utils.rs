@@ -45,3 +45,19 @@ pub fn vertices_from_line_points(lines: &Vec<Line>) -> Vec<Vertex>{
     }
     points
 }
+
+
+
+pub fn screen_point_to_world_point(screen: Vertex, width: u32, height: u32, zoom: f32, normx: f32, normy: f32, aspect: f32) -> Vertex {
+    let screen = screen.as_pos();
+    let x = -(-1.0 + 1.0 / zoom) + (((screen.x / width as f32) * 2.0) / zoom - (normx * 2.0));
+    let y = ((-1.0 + 1.0 / zoom) / aspect - (((screen.y / height as f32) * 2.0) / aspect / zoom + (normy * 2.0 - 2.0) / aspect));
+    Vertex{position: [x,y], tex_coords: [x,y]}
+}
+
+pub fn world_point_to_screen_point(world: Vertex, width: u32, height: u32, zoom: f32, normx: f32, normy: f32, aspect: f32) -> Vertex {
+    let world = world.as_pos();
+    let x = (((world.x + (-1.0 + 1.0 / zoom) + (normx * 2.0)) * zoom) / 2.0) * width as f32;
+    let y = -((((world.y - (-1.0 + 1.0 / zoom) / aspect + (normy * 2.0 - 2.0) / aspect) * zoom) * aspect / 2.0) * height as f32);
+    Vertex{position: [x,y], tex_coords: [x,y]}
+}
