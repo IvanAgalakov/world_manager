@@ -39,11 +39,13 @@ pub struct WorldInfo {
     pub(crate) triangles: Vec<Vertex>,
     pub(crate) debug_lines: Vec<Line>,
     pub(crate) ocean_line_num: u32,
+    pub(crate) top_left: (f32,f32),
+    pub(crate) bottom_right: (f32,f32),
 }
 
 impl WorldInfo {
     pub fn new(tex_data: Option<TextureData>) -> Self {
-        WorldInfo{created: false, world_texture: tex_data, texture_list: Vec::new(), lines: Vec::new(), triangles: Vec::new(), debug_lines: Vec::new(), ocean_line_num: 1}
+        WorldInfo{created: false, world_texture: tex_data, texture_list: Vec::new(), lines: Vec::new(), triangles: Vec::new(), debug_lines: Vec::new(), ocean_line_num: 1, top_left: (0.0,0.0), bottom_right: (0.0,0.0)}
     }
 }
 

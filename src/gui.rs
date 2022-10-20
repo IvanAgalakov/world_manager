@@ -53,8 +53,18 @@ pub fn run(
                 );
                 if path_to_texture.is_some() {
                     let path_to_texture = path_to_texture.unwrap();
-                    let mut dyn_tex = texture_manager::get_dynamic_image(&path_to_texture);
+                    let dyn_tex = texture_manager::get_dynamic_image(&path_to_texture);
                     let mut dyn_tex_copy = DynamicImage::clone(&dyn_tex);
+
+                    //calculating image width in world units
+                    let width = dyn_tex.width();
+                    let height = dyn_tex.height();
+                    let aspect = (width as f32)/(height as f32);
+                    let x: f32 = aspect;
+                    let y: f32 = -1.0;
+                    world_info.bottom_right = (x*aspect,y);
+                    world_info.top_left = (-1.0*aspect,1.0);
+
                     
                     let lines = geometry::generate_mesh_from_image(&mut dyn_tex_copy);
                     world_info.lines = lines;

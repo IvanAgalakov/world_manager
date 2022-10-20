@@ -1,12 +1,12 @@
+use std::cmp::Ordering;
 use std::collections::VecDeque;
 
 use egui::{Pos2, Vec2};
 use image::{DynamicImage, GenericImage, GenericImageView, Rgba};
 use rand::Rng;
 
-use crate::utils;
 use crate::constants;
-
+use crate::utils;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Vertex {
@@ -27,8 +27,22 @@ impl Vertex {
             y: self.position[1],
         }
     }
-    pub fn from_vector(vec : Vec2) -> Vertex {
-        Vertex {position: [vec.x, vec.y], tex_coords: [vec.x, vec.y]}
+    pub fn from_vector(vec: Vec2) -> Vertex {
+        Vertex {
+            position: [vec.x, vec.y],
+            tex_coords: [vec.x, vec.y],
+        }
+    }
+    pub fn get_x(&self) -> f32 {
+        return self.position[0];
+    }
+    pub fn get_y(&self) -> f32 {
+        return self.position[0];
+    }
+
+    pub fn eq(&self, other: Vertex) -> bool {
+        (self.get_x() - other.get_x()).abs() <= constants::PRECISION
+            && (self.get_y() - other.get_y()).abs() <= constants::PRECISION
     }
 }
 
@@ -40,6 +54,10 @@ pub struct Line {
 
 impl Line {
     pub fn get_intersection(&self, line: Line) -> Option<Vertex> {
+        if self.get_slope() == line.get_slope() {
+            return  None;
+        }
+
         let start = self.start.as_vector();
         let end = self.end.as_vector();
 
@@ -81,7 +99,7 @@ impl Line {
         return (p.to_pos2().distance(self.start.as_pos())
             + p.to_pos2().distance(self.end.as_pos()).abs()
             - self.get_length())
-            < 0.0001;
+            < constants::PRECISION;
     }
 
     pub fn get_length(&self) -> f32 {
@@ -95,13 +113,40 @@ impl Line {
     pub fn get_run(&self) -> f32 {
         return self.end.as_vector().x - self.start.as_vector().x;
     }
-    
-    pub fn get_start(&self) -> Vertex{
+
+    pub fn get_rise_and_run(&self) -> (f32, f32) {
+        (self.get_rise(), self.get_run())
+    }
+
+    pub fn get_slope(&self) -> f32 {
+        return self.get_rise()/self.get_run();
+    }
+
+    pub fn get_start(&self) -> Vertex {
         return self.start;
     }
 
     pub fn get_end(&self) -> Vertex {
         return self.end;
+    }
+
+    pub fn new(start: Vertex, end: Vertex) -> Self {
+        Line {
+            start: start,
+            end: end,
+        }
+    }
+
+    pub fn new_from_rise_run(start: Vertex, rise: f32, run: f32) -> Self {
+        let fill = [start.position[0] + run, start.position[1] + rise];
+        let end = Vertex {
+            position: fill,
+            tex_coords: fill,
+        };
+        Line {
+            start: start,
+            end: end,
+        }
     }
 }
 
@@ -205,16 +250,16 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
         }
     }
 
-
     let width = dyn_tex.width();
     let height = dyn_tex.height();
-    let aspect = (width as f32)/(height as f32);
+    let aspect = (width as f32) / (height as f32);
     println!("{}", aspect);
-    let mut lines = Vec::new();
+    let mut lines: Vec<Line> = Vec::new();
     //let mut all_arranged = Vec::new();
     //println!("{}", islands.len());
     for island in islands {
         //println!("pix coord: {:?}", island.pixel_coordinates.len());
+        let mut island_lines = Vec::new();
         for pixel in island.pixel_coordinates {
             let offsets: Vec<(i32, i32)> = vec![
                 (0, 1),
@@ -237,59 +282,95 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
                 }
                 let new_x = new_x as u32;
                 let new_y = new_y as u32;
-                if dyn_tex.get_pixel(new_x, new_y).0[3] > 0
-                {
-                    let x = (pixel.0 as f32 / width as f32)*2.0-1.0;
-                    let y = -(pixel.1 as f32 / height as f32)*2.0+1.0;
-                    let new_x = (new_x as f32/width as f32)*2.0-1.0;
-                    let new_y = -(new_y as f32/height as f32)*2.0+1.0;
-                    lines.push(Line{start: Vertex { position: [x*aspect, y], tex_coords: [x, y] }, end: Vertex { position: [new_x*aspect, new_y], tex_coords: [new_x, new_y] }});
+                if dyn_tex.get_pixel(new_x, new_y).0[3] > 0 {
+                    let x = (pixel.0 as f32 / width as f32) * 2.0 - 1.0;
+                    let y = -(pixel.1 as f32 / height as f32) * 2.0 + 1.0;
+                    let new_x = (new_x as f32 / width as f32) * 2.0 - 1.0;
+                    let new_y = -(new_y as f32 / height as f32) * 2.0 + 1.0;
+                    let line = Line {
+                        start: Vertex {
+                            position: [x * aspect, y],
+                            tex_coords: [x, y],
+                        },
+                        end: Vertex {
+                            position: [new_x * aspect, new_y],
+                            tex_coords: [new_x, new_y],
+                        },
+                    };
+
+                    island_lines.push(line);
+                    //lines.push();
                 }
             }
         }
-    }
-        //println!("{:?}", arranged_pixels);
-        // //let mut points = Vec::new();
-        // let mut triang: DelaunayTriangulation<Point2<f64>> = DelaunayTriangulation::new();
-        // for pixel in &arranged_pixels {
-        //     triang.insert(Point2 { x: (pixel.0 as f64) / (width as f64), y: (pixel.1 as f64) / (height as f64),});
+
+
+
+        // let mut resolution: usize = 3;
+        // let mut comp_lines = Vec::new();
+        // let mut start: Option<Vertex> = None;
+
+        // if resolution as f32 > (island_lines.len() as f32 / 3.0) {
+        //     resolution = (island_lines.len() as f32 / 3.0).floor() as usize;
+        //     if resolution <= 0 {
+        //         resolution = 1;
+        //     }
         // }
-        // let mut points = Vec::new();
-        // for face in triang.inner_faces() {
-        //     for vert in face.vertices() {
-        //         let x = vert.position().x as f32;
-        //         let y = 1.0 - vert.position().y as f32;
-        //         points.push(Vertex {
-        //             position: [x, y],
-        //             tex_coords: [x, y],
-        //         });
+        // for i in 0..island_lines.len() {
+        //     if start.is_none() {
+        //         start = Some(island_lines[i].start.clone());
+        //     }
+        //     if (i + 1) % resolution == 0 || i == (island_lines.len() - 1) {
+        //         let line = Line::new(start.unwrap().clone(), island_lines[i].end.clone());
+        //         start = Some(line.end.clone());
+        //         comp_lines.push(line);
         //     }
         // }
 
-        // triangles.append(&mut points);
-        //println!("arr length: {:?} height: {} width: {}",arranged_pixels, height, width);
-        // if arranged_pixels.len() > 0 {
-        //     for i in 0..arranged_pixels.len() {
-        //         let x = (arranged_pixels.get(i).unwrap().0 as f32/width as f32);
-        //         let y = -(arranged_pixels.get(i).unwrap().1 as f32/height as f32);
-        //         if i+1 < arranged_pixels.len() {
-        //             let x2 = (arranged_pixels.get(i+1).unwrap().0 as f32/width as f32);
-        //             let y2 = -(arranged_pixels.get(i+1).unwrap().1 as f32/height as f32);
-        //             lines.push(Line {
-        //                 start: Vertex { position: [x,y], tex_coords: [x,y] },
-        //                 end: Vertex { position: [x2,y2], tex_coords: [x2,y2] }
-        //             });
-        //         } else {
-        //             let x2 = (arranged_pixels.get(0).unwrap().0 as f32/width as f32);
-        //             let y2 = -(arranged_pixels.get(0).unwrap().1 as f32/height as f32);
-        //             lines.push(Line {
-        //                 start: Vertex { position: [x,y], tex_coords: [x,y] },
-        //                 end: Vertex { position: [x2,y2], tex_coords: [x2,y2] }
-        //             });
-        //         }
-        //     }
-        // }
-        
+        lines.append(&mut island_lines);
+    }
+    //println!("{:?}", arranged_pixels);
+    // //let mut points = Vec::new();
+    // let mut triang: DelaunayTriangulation<Point2<f64>> = DelaunayTriangulation::new();
+    // for pixel in &arranged_pixels {
+    //     triang.insert(Point2 { x: (pixel.0 as f64) / (width as f64), y: (pixel.1 as f64) / (height as f64),});
+    // }
+    // let mut points = Vec::new();
+    // for face in triang.inner_faces() {
+    //     for vert in face.vertices() {
+    //         let x = vert.position().x as f32;
+    //         let y = 1.0 - vert.position().y as f32;
+    //         points.push(Vertex {
+    //             position: [x, y],
+    //             tex_coords: [x, y],
+    //         });
+    //     }
+    // }
+
+    // triangles.append(&mut points);
+    //println!("arr length: {:?} height: {} width: {}",arranged_pixels, height, width);
+    // if arranged_pixels.len() > 0 {
+    //     for i in 0..arranged_pixels.len() {
+    //         let x = (arranged_pixels.get(i).unwrap().0 as f32/width as f32);
+    //         let y = -(arranged_pixels.get(i).unwrap().1 as f32/height as f32);
+    //         if i+1 < arranged_pixels.len() {
+    //             let x2 = (arranged_pixels.get(i+1).unwrap().0 as f32/width as f32);
+    //             let y2 = -(arranged_pixels.get(i+1).unwrap().1 as f32/height as f32);
+    //             lines.push(Line {
+    //                 start: Vertex { position: [x,y], tex_coords: [x,y] },
+    //                 end: Vertex { position: [x2,y2], tex_coords: [x2,y2] }
+    //             });
+    //         } else {
+    //             let x2 = (arranged_pixels.get(0).unwrap().0 as f32/width as f32);
+    //             let y2 = -(arranged_pixels.get(0).unwrap().1 as f32/height as f32);
+    //             lines.push(Line {
+    //                 start: Vertex { position: [x,y], tex_coords: [x,y] },
+    //                 end: Vertex { position: [x2,y2], tex_coords: [x2,y2] }
+    //             });
+    //         }
+    //     }
+    // }
+
     // println!("{} lines before optimization", lines.len());
     // //optimize lines
     // for i in 0..lines.len() {
@@ -328,8 +409,6 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
     //     }
     // }
     // println!("{} lines after optimization", lines.len());
-    
-    
 
     lines
 }
