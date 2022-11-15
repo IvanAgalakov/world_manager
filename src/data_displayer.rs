@@ -51,42 +51,42 @@ pub fn draw_things(
             .draw(&vertex_buffer, &indices, &pro, &uniforms, &params)
             .unwrap();
     }
-    // if !world_info.lines.is_empty() {
-    //     let fill = [world_info.bottom_right.0, vertex_info.mouse_pos.position[1]];
-    //     let end = Vertex{position: fill, tex_coords: fill};
-    //     let fill = [world_info.top_left.0, vertex_info.mouse_pos.position[1]];
-    //     let start = Vertex{position: fill, tex_coords: fill};
-    //     let horiz_line = Line{start: start, end: end};
-    //     let mut lines = Vec::new();
-    //     let mut intersections = Vec::new();
+    if !world_info.lines.is_empty() {
+        let fill = [world_info.bottom_right.0, vertex_info.mouse_pos.position[1]];
+        let end = Vertex{position: fill, tex_coords: fill};
+        let fill = [world_info.top_left.0, vertex_info.mouse_pos.position[1]];
+        let start = Vertex{position: fill, tex_coords: fill};
+        let horiz_line = Line{start: start, end: end};
+        let mut lines = Vec::new();
+        let mut intersections = Vec::new();
 
-    //     //lines.push(horiz_line);
-    //     for l in &world_info.lines {
-    //         if l.get_intersection(horiz_line).is_some() {
-    //             //lines.push(l.clone());
-    //             intersections.push(l.get_intersection(horiz_line).unwrap());
-    //         }
-    //     }
-    //     intersections.sort_by(|a, b| a.get_x().total_cmp(&b.get_x()));
-    //     println!("Length before dedup {}", intersections.len());
-    //     intersections.dedup_by(|a, b| a.get_x()==b.get_x());
-    //     println!("Length after dedup {}", intersections.len());
-    //     // for i in 0..intersections.len() {
-    //     //     if i < intersections.len()-1 {
-    //     //         // if intersections[i].position[0] - intersections[i+1].position[0] < constants::PRECISION {
-    //     //         //     intersections.remove(i+1);
-    //     //         // }
-    //     //     }
-    //     // }
-    //     for i in 0..intersections.len() {
-    //         if i%2 == 0 && i < intersections.len()-1{
-    //             lines.push(Line::new(intersections[i], intersections[i+1]));
-    //         }
-    //     }
+        //lines.push(horiz_line);
+        for l in &world_info.lines {
+            if l.get_intersection(horiz_line).is_some() {
+                //lines.push(l.clone());
+                intersections.push(l.get_intersection(horiz_line).unwrap());
+            }
+        }
+        intersections.sort_by(|a, b| a.get_x().total_cmp(&b.get_x()));
+        //println!("Length before dedup {}", intersections.len());
+        intersections.dedup_by(|a, b| a.get_x()==b.get_x());
+        //println!("Length after dedup {}", intersections.len());
+        for i in 0..intersections.len() {
+            if i < intersections.len()-1 {
+                // if intersections[i].position[0] - intersections[i+1].position[0] < constants::PRECISION {
+                //     intersections.remove(i+1);
+                // }
+            }
+        }
+        for i in 0..intersections.len() {
+            if i%2 == 0 && i < intersections.len()-1{
+                lines.push(Line::new(intersections[i], intersections[i+1]));
+            }
+        }
         
-    //     let triangles = utils::vertices_from_lines(0.01, &lines);
-    //     target = draw_triangles(dis, target, pro, vertex_info, &triangles);
-    // }
+        let triangles = utils::vertices_from_lines(0.01, &lines);
+        target = draw_triangles(dis, target, pro, vertex_info, &triangles);
+    }
 
     return target;
 }

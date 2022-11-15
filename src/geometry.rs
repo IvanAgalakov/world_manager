@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use std::collections::VecDeque;
+use std::f32::consts::PI;
 
 use egui::{Pos2, Vec2};
 use image::{DynamicImage, GenericImage, GenericImageView, Rgba};
@@ -8,7 +9,7 @@ use rand::Rng;
 use crate::constants;
 use crate::utils;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vertex {
     pub(crate) position: [f32; 2],
     pub(crate) tex_coords: [f32; 2],
@@ -44,9 +45,41 @@ impl Vertex {
         (self.get_x() - other.get_x()).abs() <= constants::PRECISION
             && (self.get_y() - other.get_y()).abs() <= constants::PRECISION
     }
+
+    pub fn add_to(&mut self, x: f32, y: f32) {
+        self.position[0] += x;
+        self.position[1] += y;
+        self.tex_coords[0] += x;
+        self.tex_coords[1] += y;
+    }
+
+    pub fn rotate_around(&mut self, origin: &Self, angle: f32) {
+        let ox = origin.position[0];
+        let oy = origin.position[1];
+        let px = self.position[0];
+        let py = self.position[1];
+
+        let qx = ox + angle.cos() * (px - ox) - angle.sin() * (py - oy);
+        let qy = oy + angle.sin() * (px - ox) + angle.cos() * (py - oy);
+        let dif_x = qx - px;
+        let dif_y = qy - py;
+        self.add_to(dif_x, dif_y);
+    }
+
+    pub fn get_angle_to(&self, point: &Self) -> f32 {
+        let xb = self.position[0];
+        let yb = self.position[1];
+        let xp = point.position[0];
+        let yp = point.position[1];
+        let angle = ((yb - yp) / (xb - xp)).atan();
+        if angle < 0.0 {
+            let angle = PI - angle;
+        }
+        angle
+    }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Line {
     pub(crate) start: Vertex,
     pub(crate) end: Vertex,
@@ -55,7 +88,7 @@ pub struct Line {
 impl Line {
     pub fn get_intersection(&self, line: Line) -> Option<Vertex> {
         if self.get_slope() == line.get_slope() {
-            return  None;
+            return None;
         }
 
         let start = self.start.as_vector();
@@ -119,7 +152,7 @@ impl Line {
     }
 
     pub fn get_slope(&self) -> f32 {
-        return self.get_rise()/self.get_run();
+        return self.get_rise() / self.get_run();
     }
 
     pub fn get_start(&self) -> Vertex {
@@ -263,14 +296,16 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
         for pixel in island.pixel_coordinates {
             let offsets: Vec<(i32, i32)> = vec![
                 (0, 1),
-                (1, 1),
+                // (1, 1),
                 (1, 0),
-                (1, -1),
+                // (1, -1),
                 (0, -1),
-                (-1, -1),
+                // (-1, -1),
                 (-1, 0),
-                (-1, 1),
+                // (-1, 1),
             ];
+
+            let mut deltas = Vec::new();
             for (delta_x, delta_y) in offsets {
                 let new_x = pixel.0 as i32 + delta_x;
                 let new_y = pixel.1 as i32 + delta_y;
@@ -289,22 +324,93 @@ pub fn generate_mesh_from_image(dyn_tex: &mut DynamicImage) -> Vec<Line> {
                     let new_y = -(new_y as f32 / height as f32) * 2.0 + 1.0;
                     let line = Line {
                         start: Vertex {
-                            position: [x * aspect, y],
+                            position: [x * aspect * constants::UPSCALE, y * constants::UPSCALE],
                             tex_coords: [x, y],
                         },
                         end: Vertex {
-                            position: [new_x * aspect, new_y],
+                            position: [
+                                new_x * aspect * constants::UPSCALE,
+                                new_y * constants::UPSCALE,
+                            ],
                             tex_coords: [new_x, new_y],
                         },
                     };
 
-                    island_lines.push(line);
+                    //if !island_lines.contains(&line) {
+                    //island_lines.push(line);
+                    //}
+                    deltas.push(line);
                     //lines.push();
                 }
+
+                // let mut i = 0;
+                // while i < deltas.len() {
+                //     if deltas[i].get_slope().is_sign_negative() {
+                //         deltas.remove(i);
+                //         if i != 0 {
+                //             i -= 1;
+                //         }
+                //     } else {
+                //         i += 1;
+                //     }
+                // }
+
+                //println!("{}", deltas.len());
             }
+
+            let mut slope_0 = 0;
+            let mut slope_1 = 0;
+            for i in 0..deltas.len() {
+                if f32::is_infinite(deltas[i].get_slope()) {
+                    slope_1 += 1;
+                } else {
+                    slope_0 += 1;
+                }
+            }
+
+            let mut good_slope = None;
+            //println!("horizontal {}, vertical {}", slope_0, slope_1);
+            if slope_0 > slope_1 {
+                good_slope = Some(0.0);
+            } else if slope_1 > slope_0 {
+                good_slope = Some(1.0);
+            }
+
+            if good_slope.is_some() {
+                let good_slope = good_slope.unwrap();
+                if good_slope == 0.0 {
+                    let mut i = 0;
+                    while i < deltas.len() {
+                        if deltas[i].get_slope() != good_slope {
+                            deltas.remove(i);
+                            if i != 0 {
+                                i -= 1;
+                            }
+                        } else {
+                            i += 1;
+                        }
+                    }
+                } else {
+                    let mut i = 0;
+                    while i < deltas.len() {
+                        if !f32::is_infinite(deltas[i].get_slope()) {
+                            deltas.remove(i);
+                            if i != 0 {
+                                i -= 1;
+                            }
+                        } else {
+                            i += 1;
+                        }
+                    }
+                }
+            }
+
+            if deltas.len() < 2 {
+                deltas.clear();
+            }
+
+            lines.append(&mut deltas);
         }
-
-
 
         // let mut resolution: usize = 3;
         // let mut comp_lines = Vec::new();
